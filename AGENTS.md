@@ -31,7 +31,11 @@ Every code or configuration change must update its corresponding documentation i
 
 ## Commit & Pull Request Guidelines
 
-This checkout has no Git history. Use focused commits with imperative subjects, for example `Fix technician work-order filtering`. Pull requests should explain behavior, list verification, link issues, and include screenshots for UI changes. Highlight fixture, storage-format, or migration changes.
+The repository uses `main` as its primary branch. Use focused commits with imperative subjects, for example `Fix technician work-order filtering`. Pull requests should explain behavior, list verification, link issues, and include screenshots for UI changes. Highlight fixture, storage-format, or migration changes.
+
+### Mandatory Git Authorization
+
+Never run `git add`, `git commit`, or `git push`, and never upload or publish changes to any local or remote repository, unless the user has given explicit authorization for that specific Git operation. A request to edit, implement, test, review, or prepare changes does not imply authorization to stage, commit, push, or otherwise publish them. Leave completed changes unstaged until that authorization is given.
 
 ## Security & Local Data
 

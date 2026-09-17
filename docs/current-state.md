@@ -23,6 +23,12 @@ No hay correo real, PDF, facturación, contabilidad, nóminas, almacén, rutas n
 
 ## Registro de cambios
 
+### 2026-09-17 — Autorización obligatoria para operaciones Git
+
+- Se añadió a la guía canónica de agentes la prohibición de ejecutar `git add`, `git commit` o `git push` sin autorización explícita del usuario para esa operación.
+- La misma regla se aplica automáticamente a `CLAUDE.md`, que continúa siendo un enlace simbólico a `AGENTS.md`.
+- Las solicitudes de edición, implementación, prueba o revisión no se consideran autorización implícita para preparar, confirmar o publicar cambios.
+
 ### 2026-09-17 — Inicio del historial Git
 
 - Se preparó el primer commit con el código, las migraciones, la documentación y la configuración reproducible del proyecto.
