@@ -50,7 +50,7 @@ pnpm test:permissions
 
 jsdom no comprueba disposición visual, móvil real, dibujo de canvas, envío/recepción SMTP, persistencia tras recargar ni transporte Realtime. El contexto de canvas está simulado aunque se disparan los eventos reales del componente de firma. La pantalla administrativa completa y la Edge Function todavía no tienen pruebas automatizadas de interfaz/ejecución propia; sus llamadas del repositorio y la autorización SQL sí tienen comprobaciones.
 
-La numeración se prueba con SQL real en PGlite sobre un esquema mínimo, sin toda la infraestructura de Supabase. PGlite usa una sola conexión: comprueba lotes y rollback, pero no sustituye la prueba de concurrencia entre sesiones ni la suite completa de RLS/RPC. La migración del prefijo fijo está preparada localmente y debe aplicarse en el entorno de destino durante el despliegue autorizado.
+La numeración se prueba con SQL real en PGlite sobre un esquema mínimo, sin toda la infraestructura de Supabase. PGlite usa una sola conexión: comprueba lotes y rollback, pero no sustituye la prueba de concurrencia entre sesiones ni la suite completa de RLS/RPC. La migración del prefijo fijo se aplicó en Supabase el 20 de octubre con autorización del usuario. A continuación pasó `authorization.sql` contra el proyecto remoto, con sus fixtures revertidos. Se confirmó que permanecen los 13 partes y el mismo checksum de sus referencias, y que el contador siguiente es 1019 con prefijo PT.
 
 Completar `tests/manual-smoke.md` cuando el cambio afecte esos límites. Mantener los tres roles y las dos vías de cierre en las regresiones. Una corrección debe incluir una prueba que falle antes y pase después. Evitar nuevas pruebas que solo repitan detalles internos o estilos.
 

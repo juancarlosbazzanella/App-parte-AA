@@ -1,6 +1,6 @@
 # ADR 008 — Prefijo fijo y contador consecutivo de partes
 
-- Estado: aceptada; migración preparada localmente, pendiente de publicación.
+- Estado: aceptada; migración aplicada en Supabase y frontend publicado el 20 de octubre de 2026.
 - Fecha: 2026-10-20
 - Amplía ADR 003 y 007; sustituye la configuración de empresa en la interfaz descrita en ADR 006.
 
@@ -15,7 +15,7 @@ El administrador podía cambiar el nombre de empresa y el prefijo de partes desd
 - Mantener cuatro cifras como mínimo: `PT-0001` a `PT-9999`, luego `PT-10000`, etc. Evitar que `lpad` trunque las cifras superiores a cuatro.
 - Mantener intactas todas las referencias y secuencias históricas. La migración actualiza cada contador al mayor entre su valor actual y el máximo histórico más uno, para no retroceder ni repetir números. Los fallos de creación revierten el contador dentro de la misma transacción. Una eliminación administrativa posterior no recupera números usados.
 - Conservar la columna `work_order_prefix` por compatibilidad, con valor y default `PT`, una restricción que impide otros valores y sin permiso de edición para `authenticated`. No cambian columnas ni firmas de RPC públicas, por lo que los tipos generados conservan su forma.
-- Versionar el cambio en una migración nueva creada mediante Supabase CLI, sin reescribir migraciones anteriores ni aplicar cambios en remoto durante esta preparación.
+- Versionar el cambio en una migración nueva creada mediante Supabase CLI, sin reescribir migraciones anteriores. Tras la autorización de publicación, Supabase MCP registró la versión `20261020105413`; el archivo local y sus referencias se alinearon con esa marca temporal conservando el SQL.
 
 ## Verificación
 

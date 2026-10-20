@@ -26,6 +26,12 @@ Ejecutar estas comprobaciones tras cambios funcionales o visuales:
 21. En **Usuarios**, comprobar en escritorio y móvil que siguen disponibles las invitaciones y el equipo, sin el bloque **Datos de la empresa**, prefijo ni botón de guardar empresa.
 22. Tras aplicar la migración de numeración, crear un parte desde oficina y después una urgencia desde técnico: ambos deben usar `PT-` y números consecutivos desde el mayor número existente o el contador reservado. Confirmar que los partes históricos conservan sus referencias, incluso con otros prefijos. Crear desde dos sesiones a la vez y comprobar referencias distintas. Guardar o cerrar un parte ya creado no debe consumir otro número.
 
+## Resultado del 20 de octubre de 2026
+
+- Se aplicó la migración fija PT en Supabase con autorización del usuario y pasó la suite completa de autorización con fixtures revertidos, incluidos ambos cierres y numeración compartida entre roles.
+- Dokploy confirmó el frontend publicado. Con la sesión existente del administrador se comprobaron **Usuarios**, invitaciones y equipo, y ausencia de **Datos de la empresa** y sus controles. La captura de escritorio y la de móvil a 390 × 844 están en la carpeta ignorada `outputs/climagest-release-2026-10-20/`; el móvil no tiene desbordamiento horizontal.
+- HTTPS respondió HTTP 200 con TLS válido y un nuevo bundle de cliente; la consulta anónima a clientes devolvió 401. No se introdujeron credenciales, enviaron correos, crearon partes operativos ni cambiaron miembros durante estas comprobaciones. Los 13 partes y su checksum de referencias permanecen intactos; el contador siguiente es 1019.
+
 ## Resultado del 16 de octubre de 2026
 
 - El administrador confirmó recepción del correo de recuperación, establecimiento de contraseña y acceso posterior en el mismo navegador. Supabase confirmó mediante consulta de solo lectura el inicio de sesión reciente y la membresía administradora activa.

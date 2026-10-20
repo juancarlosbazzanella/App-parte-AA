@@ -60,7 +60,7 @@ beforeAll(async () => {
            ('${otherOrganizationId}', 7, 'OLD-0007', 'urgent');
   `);
 
-  const migration = await readFile(new URL("../supabase/migrations/20261020100809_fixed_work_order_numbering.sql", import.meta.url), "utf8");
+  const migration = await readFile(new URL("../supabase/migrations/20261020105413_fixed_work_order_numbering.sql", import.meta.url), "utf8");
   await database.exec(migration);
 }, 20_000);
 

@@ -2,7 +2,7 @@
 
 Aplicación responsive para gestionar partes de trabajo de una pequeña empresa de climatización, conectada a Supabase.
 
-Disponible en [ClimaGest](https://partes.juancarlosbazzanella.es/), con acceso individual por invitación. Frontend actualizado publicado el 16 de octubre de 2026 en el alojamiento existente de Dokploy.
+Disponible en [ClimaGest](https://partes.juancarlosbazzanella.es/), con acceso individual por invitación. Frontend actualizado publicado el 20 de octubre de 2026 en el alojamiento existente de Dokploy, con **Usuarios** sin configuración de empresa y numeración nueva fija `PT-`.
 
 ## Probarlo en el ordenador
 
@@ -31,7 +31,7 @@ Clientes, máquinas, partes y auditoría se guardan en PostgreSQL mediante Supab
 
 Las migraciones y los datos iniciales están en `supabase/migrations/`. Para crear una migración nueva se usa `pnpm db:generate -- <nombre>`.
 
-Los nuevos partes usan siempre el prefijo `PT-` y una numeración consecutiva por empresa, compartida entre oficina y urgencias: `PT-0001`, `PT-0002`, etc. PostgreSQL asigna el siguiente número al crear el parte; los partes anteriores conservan sus referencias. La migración `20261020100809_fixed_work_order_numbering.sql` fija esta regla y continúa desde el contador existente o el mayor número histórico, sin retroceder. El panel de usuarios ya no incluye configuración de empresa ni de prefijos.
+Los nuevos partes usan siempre el prefijo `PT-` y una numeración consecutiva por empresa, compartida entre oficina y urgencias: `PT-0001`, `PT-0002`, etc. PostgreSQL asigna el siguiente número al crear el parte; los partes anteriores conservan sus referencias. La migración `20261020105413_fixed_work_order_numbering.sql` fija esta regla y continúa desde el contador existente o el mayor número histórico, sin retroceder. El panel de usuarios ya no incluye configuración de empresa ni de prefijos.
 
 ## Seguridad de dependencias
 

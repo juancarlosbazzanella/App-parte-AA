@@ -5,7 +5,7 @@
 ## Implementado
 
 - Acceso personal con Supabase Auth y roles de administrador de empresa, oficina y técnico.
-- Invitaciones, gestión de miembros y recuperación/establecimiento de contraseña. La interfaz local usa **Usuarios**, sin bloque de configuración de empresa; pendiente de publicación.
+- Invitaciones, gestión de miembros y recuperación/establecimiento de contraseña. La interfaz publicada usa **Usuarios**, sin bloque de configuración de empresa.
 - SMTP de Resend configurado, con dominio verificado y recuperación por correo, cambio de contraseña y acceso posterior confirmados por el administrador.
 - Contraseñas de 15 caracteres con cuatro grupos exigidas por Supabase, registro público desactivado y sesiones comprobadas en base de datos.
 - Gestión de clientes, máquinas y partes por parte de oficina.
@@ -18,17 +18,33 @@
 - Numeración atómica, control de edición concurrente y auditoría de correcciones posteriores al cierre.
 - Migraciones reproducibles y tipos TypeScript generados desde la base remota.
 - Diseño responsive para móvil, tableta y ordenador.
-- Frontend actualizado publicado en `https://partes.juancarlosbazzanella.es` mediante el servicio existente de Dokploy.
+- Frontend actualizado publicado el 20 de octubre de 2026 en `https://partes.juancarlosbazzanella.es` mediante el servicio existente de Dokploy.
 - Repositorio Git inicializado en la rama `main`, con secretos y artefactos generados excluidos del control de versiones.
 - Gestor de dependencias migrado a pnpm 11.25.0 con versión e integridad fijadas, lockfile congelado y controles contra publicaciones recientes, fuentes transitivas exóticas y scripts de instalación no autorizados.
 - Suite automatizada con Vitest y React Testing Library para acceso, contratos del repositorio, archivos privados y flujos críticos de oficina/técnico; comandos `test`, `test:watch`, `test:coverage` y `test:auth`. Véanse `testing.md` y ADR 007.
-- Numeración fija `PT-` con contador atómico por empresa preparada en una migración nueva, conservando referencias históricas. Pruebas SQL de numeración con PGlite y `test:numbering`, sin Docker ni credenciales. Véase ADR 008.
+- Numeración fija `PT-` con contador atómico por empresa aplicada en Supabase, conservando referencias históricas. Pruebas SQL de numeración con PGlite y `test:numbering`, sin Docker ni credenciales, y suite completa de autorización validada en remoto con rollback. Véase ADR 008.
 
 ## Límites vigentes
 
-La entrega y activación de una invitación a un nuevo destinatario real todavía no se han probado con SMTP. Las copias de partes por correo siguen simuladas. No hay PDF, facturación, contabilidad, nóminas, almacén, rutas ni funcionamiento sin conexión. Las cuentas demo están desactivadas. La suite React usa jsdom y no sustituye pruebas de navegador, diseño responsive o integraciones reales; la pantalla administrativa completa y la Edge Function no tienen suite de ejecución propia. La suite SQL requiere Supabase local con Docker/Podman, ausentes en este equipo. La auditoría de dependencias mantiene un aviso alto sin parche publicado en braces, usado por herramientas de desarrollo; véase `security-auth-2026-10-15.md`. La protección contra contraseñas filtradas requiere Supabase Pro y no se ha contratado. El panel de administración de Dokploy sigue usando HTTP. Las operaciones Git de escritura requieren autorización expresa; el usuario ha autorizado la entrega de estos cambios al repositorio en `main`. La aplicación de la migración de numeración y el despliegue del frontend siguen pendientes.
+La entrega y activación de una invitación a un nuevo destinatario real todavía no se han probado con SMTP. Las copias de partes por correo siguen simuladas. No hay PDF, facturación, contabilidad, nóminas, almacén, rutas ni funcionamiento sin conexión. Las cuentas demo están desactivadas. La suite React usa jsdom y no sustituye pruebas de navegador, diseño responsive o integraciones reales; la pantalla administrativa completa y la Edge Function no tienen suite de ejecución propia. La ejecución local de la suite SQL requiere Docker/Podman, ausentes en este equipo; pasó en Supabase remoto con rollback el 20 de octubre. La auditoría de dependencias mantiene un aviso alto sin parche publicado en braces, usado por herramientas de desarrollo; véase `security-auth-2026-10-15.md`. La protección contra contraseñas filtradas requiere Supabase Pro y no se ha contratado. El panel de administración de Dokploy sigue usando HTTP. Las operaciones Git de escritura requieren autorización expresa; el commit `f820af9` se entregó en `main` con permiso del usuario, que también ha autorizado subir el registro del despliegue y la alineación posterior del nombre de migración.
 
 ## Registro de cambios
+
+### 2026-10-20 — Sincronización autorizada tras la publicación
+
+- El usuario autorizó subir todos los cambios pendientes a `main`: registro del despliegue, alineación del nombre de migración con la versión remota y referencias documentales y de prueba.
+- La migración renombrada conserva exactamente el SQL ya publicado. Esta sincronización no cambia el comportamiento de la aplicación ni requiere volver a aplicar la migración o desplegar el frontend.
+- Los paquetes, capturas, comprobaciones HTTP y credenciales permanecen excluidos del repositorio.
+
+### 2026-10-20 — Migración autorizada y publicación completada
+
+- El usuario autorizó aplicar la migración y publicar el frontend después de subir el commit `f820af9` a `main`. Se accedió al mismo servicio de Dokploy tras el inicio de sesión del usuario, conservando proveedor Drop, Railpack 0.15.4, variables y dominio.
+- Supabase MCP aplicó `fixed_work_order_numbering` con versión `20261020105413`. Se alinearon el archivo local y las referencias documentales/de prueba con la marca registrada, sin modificar el SQL ni volver a aplicar la migración.
+- La comprobación anterior y posterior confirma los mismos 13 partes, máximo 1018, checksum de referencias/secuencias `2d03cc206f26c62a24712964104e67e7` y contador siguiente 1019. El prefijo es PT, la restricción está activa y `authenticated` no puede cambiarlo.
+- La suite completa `tests/authorization.sql` pasó contra Supabase remoto y revirtió sus fixtures. Los avisores de seguridad solo mantienen el aviso conocido de protección de contraseñas filtradas, no contratada en el plan Free.
+- Durante el despliegue no se ejecutaron nuevas operaciones Git de escritura; el usuario autorizó después la subida de la alineación de versión y este registro.
+- Dokploy confirmó **Done** tras 6 min 38 s. El ZIP `climagest-f820af9.zip` contiene 154 archivos y 332574 bytes, con SHA-256 `183279e5857c78130e7e615d0017de6c389bb26d3ad71f3537d03377e209922f`; se conserva junto con el manifiesto y las capturas en `outputs/climagest-release-2026-10-20/`.
+- Se verificaron HTTP 200, TLS válido, nuevo bundle público, consulta anónima de clientes rechazada con 401 y administración autenticada con **Usuarios** sin el bloque retirado. La pantalla móvil a 390 × 844 no desborda horizontalmente. Las 93 pruebas pasaron también tras alinear el nombre de la migración. No se crearon partes operativos, no se modificaron miembros ni se enviaron correos en esta comprobación.
 
 ### 2026-10-20 — Entrega autorizada al repositorio en main
 
@@ -40,7 +56,7 @@ La entrega y activación de una invitación a un nuevo destinatario real todaví
 
 - Se estableció en `AGENTS.md` el trabajo exclusivo en `main`: no crear otras ramas sin instrucción explícita. Se reforzó la prohibición de `git add`, `git commit`, `git push` y de cualquier subida al repositorio sin autorización específica para cada operación. `CLAUDE.md` conserva su enlace simbólico; no se ejecutaron operaciones Git de escritura ni se creó ninguna rama.
 - Se retiraron **Datos de la empresa**, su estado y el método de guardado. La navegación y pantalla se llaman **Usuarios**, manteniendo invitaciones y permisos. El cliente ya no carga prefijo, zona horaria ni siguiente número; el nombre de empresa sigue visible en la cabecera.
-- La migración `20261020100809_fixed_work_order_numbering.sql`, creada mediante Supabase CLI, fija el prefijo `PT-` en el trigger y continúa desde el contador vigente o el mayor `sequence_number` histórico más uno. Conserva referencias anteriores y contadores adelantados, comparte secuencia entre oficina/urgencias, revierte el contador si falla la creación y no trunca cifras a partir de 10000. Se fija la columna de compatibilidad a `PT` y se revoca su edición por usuarios autenticados; las columnas y tipos públicos no cambian.
+- La migración `20261020105413_fixed_work_order_numbering.sql`, creada mediante Supabase CLI, fija el prefijo `PT-` en el trigger y continúa desde el contador vigente o el mayor `sequence_number` histórico más uno. Conserva referencias anteriores y contadores adelantados, comparte secuencia entre oficina/urgencias, revierte el contador si falla la creación y no trunca cifras a partir de 10000. Se fija la columna de compatibilidad a `PT` y se revoca su edición por usuarios autenticados; las columnas y tipos públicos no cambian.
 - Se añadió PGlite 0.5.9 solo para desarrollo, respetando la antigüedad mínima y sin scripts de instalación nuevos, para probar el SQL real en PostgreSQL en memoria. Pasan 93 pruebas en ocho archivos, con 12 casos de numeración y una regresión de administración sin datos de empresa. La suite SQL completa incorpora comprobaciones de numeración consecutiva entre roles; no se ha ejecutado sin Supabase local.
 - Los cambios están preparados en la copia de trabajo de `main`. La migración y el frontend no se han publicado ni aplicado en Supabase remoto. El despliegue autorizado debe incluir ambos para activar la regla en la aplicación publicada.
 - Pasaron documentación, las 93 pruebas, tipos y build. La auditoría conserva los ocho avisos conocidos, incluido braces alto sin parche; no se relajó ningún control de instalación. El informe generado de cobertura queda excluido del lint para evitar avisos sobre sus scripts auxiliares.
