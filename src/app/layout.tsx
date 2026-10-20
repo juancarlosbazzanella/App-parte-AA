@@ -3,7 +3,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "ClimaGest · Partes de trabajo",
-  description: "Prototipo local para gestionar partes de trabajo y el historial de equipos.",
+  description: "Aplicación para gestionar partes de trabajo y el historial de equipos.",
+  referrer: "no-referrer",
   other: {
     "codex-preview": "development",
   },

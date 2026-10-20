@@ -16,7 +16,9 @@ export const supabase = createClient<Database>(
   {
     auth: {
       autoRefreshToken: true,
-      detectSessionInUrl: true,
+      // Access links are consumed explicitly, then removed from the address bar.
+      detectSessionInUrl: false,
+      flowType: "pkce",
       persistSession: true,
     },
   },

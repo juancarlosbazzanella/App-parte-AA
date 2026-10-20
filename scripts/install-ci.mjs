@@ -4,8 +4,8 @@ import path from "node:path";
 import { projectRoot } from "./sites-env.mjs";
 import { readExecutionProfile } from "./execution-profile.mjs";
 
-if (!process.env.npm_execpath) {
-  throw new Error("Run this installer with npm run install:ci.");
+if (!process.env.npm_execpath || !process.env.npm_config_user_agent?.startsWith("pnpm/")) {
+  throw new Error("Run this installer with pnpm run install:ci.");
 }
 
 if (![
@@ -18,21 +18,21 @@ if (![
 }
 
 if (readExecutionProfile() === "managed-linux") {
-  const result = spawnSync("bash", [path.join(projectRoot, "scripts/install-ci.sh")], {
+  const result = spawnSync("bash", [path.join(projectRoot, "scripts/install-pnpm.sh")], {
     stdio: "inherit",
   });
   if (result.error) throw result.error;
   process.exit(result.status ?? 1);
 }
 
-// Invoke npm's JavaScript entrypoint, avoiding platform-specific shell shims.
+// Invoke pnpm's JavaScript entrypoint, avoiding platform-specific shell shims.
 const installed = spawnSync(
   process.execPath,
   [
-    process.env.npm_execpath, "ci", "--prefix", projectRoot, "--workspaces=false",
-    "--include=dev", "--include=optional", "--prefer-offline", "--no-audit", "--no-fund",
+    process.env.npm_execpath, "install", "--frozen-lockfile", "--prod=false",
+    "--prefer-offline",
   ],
-  { stdio: "inherit" },
+  { cwd: projectRoot, stdio: "inherit" },
 );
 if (installed.error) throw installed.error;
 if (installed.status !== 0) process.exit(installed.status ?? 1);
@@ -46,6 +46,6 @@ try {
     process.platform === "win32" ? constants.F_OK : constants.X_OK,
   );
 } catch {
-  console.error("npm ci exited successfully but the local vinext executable is unavailable.");
+  console.error("pnpm install exited successfully but the local vinext executable is unavailable.");
   process.exitCode = 69;
 }

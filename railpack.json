@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "packages": {
+    "node": "22.23.3"
+  },
+  "steps": {
+    "install": {
+      "commands": [
+        { "src": "package.json", "dest": "package.json" },
+        { "src": "pnpm-lock.yaml", "dest": "pnpm-lock.yaml" },
+        { "src": "pnpm-workspace.yaml", "dest": "pnpm-workspace.yaml" },
+        { "path": "/app/node_modules/.bin" },
+        "corepack enable && corepack prepare --activate",
+        "corepack pnpm install --frozen-lockfile --prod=false --prefer-offline"
+      ]
+    }
+  }
+}

@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -119,6 +119,97 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organization_members"
             referencedColumns: ["organization_id", "user_id"]
+          },
+        ]
+      }
+      member_access_events: {
+        Row: {
+          actor_id: string
+          created_at: string
+          id: string
+          new_active: boolean
+          new_role: Database["public"]["Enums"]["member_role"]
+          old_active: boolean | null
+          old_role: Database["public"]["Enums"]["member_role"] | null
+          organization_id: string
+          user_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          id?: string
+          new_active: boolean
+          new_role: Database["public"]["Enums"]["member_role"]
+          old_active?: boolean | null
+          old_role?: Database["public"]["Enums"]["member_role"] | null
+          organization_id: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          id?: string
+          new_active?: boolean
+          new_role?: Database["public"]["Enums"]["member_role"]
+          old_active?: boolean | null
+          old_role?: Database["public"]["Enums"]["member_role"] | null
+          organization_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_access_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_invitations: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          invited_by: string
+          organization_id: string
+          role: Database["public"]["Enums"]["member_role"]
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          invited_by: string
+          organization_id: string
+          role: Database["public"]["Enums"]["member_role"]
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          invited_by?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["member_role"]
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_invitations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -497,6 +588,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      complete_member_invitation: {
+        Args: { p_invitation_id: string; p_user_id: string }
+        Returns: undefined
+      }
       correct_closed_work_order: {
         Args: {
           p_client_id: string
@@ -600,6 +695,26 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      list_organization_members: {
+        Args: { p_organization_id: string }
+        Returns: {
+          email: string
+          full_name: string
+          invitation_pending: boolean
+          is_active: boolean
+          role: Database["public"]["Enums"]["member_role"]
+          user_id: string
+        }[]
+      }
+      prepare_member_invitation: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_organization_id: string
+          p_role: Database["public"]["Enums"]["member_role"]
+        }
+        Returns: string
+      }
       update_open_work_order: {
         Args: {
           p_client_id: string
@@ -651,9 +766,18 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      update_organization_member: {
+        Args: {
+          p_is_active: boolean
+          p_organization_id: string
+          p_role: Database["public"]["Enums"]["member_role"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
-      member_role: "office" | "technician"
+      member_role: "office" | "technician" | "admin"
       work_order_source: "office" | "urgent"
       work_order_status: "open" | "closed"
       work_order_type:
@@ -788,7 +912,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      member_role: ["office", "technician"],
+      member_role: ["office", "technician", "admin"],
       work_order_source: ["office", "urgent"],
       work_order_status: ["open", "closed"],
       work_order_type: [

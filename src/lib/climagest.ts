@@ -1,19 +1,23 @@
 import type { RealtimeChannel, User } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
+import { passwordError } from "@/lib/auth-policy";
 
-export type UserRole = "office" | "technician";
+export type UserRole = "admin" | "office" | "technician";
+export const ROLE_LABELS: Record<UserRole, string> = { admin: "Administrador", office: "Oficina", technician: "Técnico" };
+export function canManageWork(role: UserRole) { return role === "admin" || role === "office"; }
 export type WorkStatus = "open" | "closed";
 export type WorkType = "Instalación" | "Mantenimiento" | "Avería" | "Revisión";
 
 type WorkOrderRow = Database["public"]["Tables"]["work_orders"]["Row"];
 type WorkOrderType = Database["public"]["Enums"]["work_order_type"];
 
-export type DemoUser = {
+export type AppUser = {
   id: string;
   name: string;
   email: string;
   role: UserRole;
+  isActive: boolean;
 };
 
 export type Client = {
@@ -76,26 +80,22 @@ export type WorkOrder = {
   noSignatureReason: string;
   corrections: Correction[];
   version: number;
+  correctionSummary?: string;
 };
 
-export type DemoState = {
+export type AppState = {
   organizationId: string;
-  users: DemoUser[];
+  organization: { name: string };
+  users: AppUser[];
   clients: Client[];
   machines: Machine[];
   jobs: WorkOrder[];
-  nextJobNumber: number;
 };
 
-export const DEMO_PASSWORD = "demo1234";
-export const WORK_TYPES: WorkType[] = ["Instalación", "Mantenimiento", "Avería", "Revisión"];
+export type ManagedMember = Database["public"]["Functions"]["list_organization_members"]["Returns"][number];
+export type MemberInvitation = Database["public"]["Tables"]["member_invitations"]["Row"];
 
-export const DEMO_USERS: DemoUser[] = [
-  { id: "20000000-0000-4000-8000-000000000001", name: "Oficina", email: "oficina@climagest.demo", role: "office" },
-  { id: "20000000-0000-4000-8000-000000000002", name: "Álvaro", email: "alvaro@climagest.demo", role: "technician" },
-  { id: "20000000-0000-4000-8000-000000000003", name: "Lucía", email: "lucia@climagest.demo", role: "technician" },
-  { id: "20000000-0000-4000-8000-000000000004", name: "Marcos", email: "marcos@climagest.demo", role: "technician" },
-];
+export const WORK_TYPES: WorkType[] = ["Instalación", "Mantenimiento", "Avería", "Revisión"];
 
 const typeToDatabase: Record<WorkType, WorkOrderType> = {
   Instalación: "installation",
@@ -121,11 +121,7 @@ function optionalNumber(value: string) {
 }
 
 function assertNoError(error: { message: string } | null, fallback: string) {
-  if (error) throw new Error(error.message || fallback);
-}
-
-function emailForUser(userId: string) {
-  return DEMO_USERS.find((user) => user.id === userId)?.email ?? "";
+  if (error) throw new Error(fallback);
 }
 
 function extensionForMime(mimeType: string) {
@@ -133,7 +129,6 @@ function extensionForMime(mimeType: string) {
     "image/jpeg": "jpg",
     "image/png": "png",
     "image/webp": "webp",
-    "image/svg+xml": "svg",
   }[mimeType] ?? "img";
 }
 
@@ -148,7 +143,7 @@ async function signedUrlMap(paths: string[]) {
   if (!uniquePaths.length) return new Map<string, string>();
   const { data, error } = await supabase.storage
     .from("work-order-files")
-    .createSignedUrls(uniquePaths, 60 * 60);
+    .createSignedUrls(uniquePaths, 120);
   assertNoError(error, "No se pudieron abrir los archivos privados.");
   return new Map(
     (data ?? [])
@@ -217,7 +212,7 @@ async function syncPhotos(
       });
     if (insertError) {
       await supabase.storage.from("work-order-files").remove([storagePath]);
-      throw new Error(insertError.message);
+      throw new Error("No se pudo guardar la fotografía.");
     }
   }
 }
@@ -251,10 +246,104 @@ function commonWorkOrderArgs(job: WorkOrder) {
   };
 }
 
+let authInitialization: Promise<{ user: User | null; passwordSetup: boolean }> | undefined;
+
 export const climagestRepository = {
+  initializeAuth() {
+    // React Strict Mode can mount twice; a one-use link must be consumed once.
+    authInitialization ??= this.consumeAccessLink();
+    return authInitialization;
+  },
+
+  async consumeAccessLink() {
+    const url = new URL(window.location.href);
+    const hash = new URLSearchParams(url.hash.slice(1));
+    const type = url.searchParams.get("type") ?? hash.get("type");
+    const tokenHash = url.searchParams.get("token_hash");
+    const code = url.searchParams.get("code");
+    const accessToken = hash.get("access_token");
+    const refreshToken = hash.get("refresh_token");
+    const isAccessLink = Boolean(tokenHash || code || accessToken || hash.get("error") || url.searchParams.get("error"));
+    const passwordSetup = isAccessLink && (type === "invite" || type === "recovery" || ["setup", "reset"].includes(url.searchParams.get("auth") ?? ""));
+    if (isAccessLink) {
+      window.history.replaceState(null, "", url.pathname);
+      let error: { message: string } | null = null;
+      if (tokenHash && (type === "invite" || type === "recovery")) {
+        ({ error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type }));
+      } else if (code) {
+        ({ error } = await supabase.auth.exchangeCodeForSession(code));
+      } else if (accessToken && refreshToken) {
+        ({ error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }));
+      } else {
+        error = { message: "invalid_link" };
+      }
+      assertNoError(error, "El enlace ha caducado o ya se ha utilizado. Solicita uno nuevo desde Recuperar contraseña.");
+    }
+    return { user: await this.getSessionUser(), passwordSetup };
+  },
+
+  async requestPasswordReset(email: string) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/?auth=reset`,
+    });
+    assertNoError(error, "No se pudo solicitar el enlace. Espera un minuto e inténtalo de nuevo.");
+  },
+
+  async setPassword(password: string) {
+    const validation = passwordError(password);
+    if (validation) throw new Error(validation);
+    const { error } = await supabase.auth.updateUser({ password });
+    assertNoError(error, "No se pudo guardar la contraseña. Comprueba los requisitos o solicita un enlace nuevo.");
+    const { error: signOutError } = await supabase.auth.signOut({ scope: "global" });
+    assertNoError(signOutError, "Contraseña guardada. Cierra la sesión antes de volver a entrar.");
+  },
+
+  async getPrivateFileUrl(path: string) {
+    const { data, error } = await supabase.storage.from("work-order-files").createSignedUrl(path, 120);
+    assertNoError(error, "No se pudo abrir el archivo privado.");
+    return data?.signedUrl ?? "";
+  },
+
+  async listMembers(organizationId: string): Promise<ManagedMember[]> {
+    const { data, error } = await supabase.rpc("list_organization_members", { p_organization_id: organizationId });
+    assertNoError(error, "No se pudieron cargar los usuarios.");
+    return data ?? [];
+  },
+
+  async listInvitations(organizationId: string): Promise<MemberInvitation[]> {
+    const { data, error } = await supabase.from("member_invitations").select("*").eq("organization_id", organizationId).order("created_at", { ascending: false });
+    assertNoError(error, "No se pudieron cargar las invitaciones.");
+    return data ?? [];
+  },
+
+  async inviteMember(organizationId: string, email: string, name: string, role: UserRole) {
+    const { data, error } = await supabase.functions.invoke("climagest-invite", {
+      body: { organizationId, email: email.trim(), name: name.trim(), role },
+    });
+    if (error || !data?.success) {
+      // Return only the Edge Function's deliberate public messages.
+      let message = "No se pudo enviar la invitación. Comprueba los datos y la configuración del correo.";
+      if (error && "context" in error && error.context instanceof Response) {
+        const response = await error.context.json().catch(() => null);
+        if (typeof response?.error === "string") message = response.error;
+      }
+      throw new Error(message);
+    }
+  },
+
+  async updateMember(organizationId: string, member: ManagedMember, role: UserRole, isActive: boolean) {
+    const { error } = await supabase.rpc("update_organization_member", {
+      p_organization_id: organizationId, p_user_id: member.user_id, p_role: role, p_is_active: isActive,
+    });
+    if (error) {
+      const safeMessages = ["Debe quedar al menos un administrador activo.", "Reasigna primero los partes abiertos de este técnico."];
+      throw new Error(safeMessages.includes(error.message) ? error.message : "No se pudo cambiar el acceso del usuario.");
+    }
+  },
+
   async signIn(email: string, password: string) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    assertNoError(error, "No se pudo iniciar sesión.");
+    assertNoError(error, "No se pudo iniciar sesión. Revisa tu correo y contraseña.");
     if (!data.user) throw new Error("Supabase no devolvió un usuario autenticado.");
     return data.user;
   },
@@ -265,14 +354,15 @@ export const climagestRepository = {
   },
 
   async getSessionUser() {
-    const { data, error } = await supabase.auth.getSession();
+    const { data, error } = await supabase.auth.getUser();
+    if (error?.name === "AuthSessionMissingError") return null;
     assertNoError(error, "No se pudo recuperar la sesión.");
-    return data.session?.user ?? null;
+    return data.user ?? null;
   },
 
-  onAuthStateChange(callback: (user: User | null) => void) {
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      callback(session?.user ?? null);
+  onAuthStateChange(callback: (user: User | null, event: string) => void) {
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      callback(session?.user ?? null, event);
     });
     return () => data.subscription.unsubscribe();
   },
@@ -285,6 +375,8 @@ export const climagestRepository = {
       .on("postgres_changes", { event: "*", schema: "public", table: "work_orders" }, onChange)
       .on("postgres_changes", { event: "*", schema: "public", table: "work_order_photos" }, onChange)
       .on("postgres_changes", { event: "*", schema: "public", table: "work_order_corrections" }, onChange)
+      .on("postgres_changes", { event: "*", schema: "public", table: "organization_members" }, onChange)
+      .on("postgres_changes", { event: "*", schema: "public", table: "organizations" }, onChange)
       .subscribe();
   },
 
@@ -292,7 +384,7 @@ export const climagestRepository = {
     await supabase.removeChannel(channel);
   },
 
-  async load(): Promise<DemoState> {
+  async load(): Promise<AppState> {
     const authUser = await currentAuthUser();
     const { data: ownMemberships, error: ownMembershipError } = await supabase
       .from("organization_members")
@@ -305,8 +397,8 @@ export const climagestRepository = {
     if (!organizationId) throw new Error("Tu cuenta no pertenece a ninguna empresa activa.");
 
     const [organizationResult, membersResult, profilesResult, clientsResult, machinesResult, jobsResult, photosResult, correctionsResult] = await Promise.all([
-      supabase.from("organizations").select("id, next_work_order_number").eq("id", organizationId).single(),
-      supabase.from("organization_members").select("organization_id, user_id, role, is_active").eq("organization_id", organizationId).eq("is_active", true),
+      supabase.from("organizations").select("id, name").eq("id", organizationId).single(),
+      supabase.from("organization_members").select("organization_id, user_id, role, is_active").eq("organization_id", organizationId),
       supabase.from("profiles").select("id, full_name"),
       supabase.from("clients").select("id, name, email, phone").eq("organization_id", organizationId).is("archived_at", null).order("name"),
       supabase.from("machines").select("id, client_id, brand, model, serial_number, installation_address").eq("organization_id", organizationId).is("archived_at", null).order("brand"),
@@ -320,11 +412,12 @@ export const climagestRepository = {
     }
 
     const profileById = new Map((profilesResult.data ?? []).map((profile) => [profile.id, profile]));
-    const users: DemoUser[] = (membersResult.data ?? []).map((member) => ({
+    const users: AppUser[] = (membersResult.data ?? []).map((member) => ({
       id: member.user_id,
       name: profileById.get(member.user_id)?.full_name ?? "Usuario",
-      email: emailForUser(member.user_id),
+      email: member.user_id === authUser.id ? authUser.email ?? "" : "",
       role: member.role,
+      isActive: member.is_active,
     }));
 
     const filePaths = [
@@ -390,6 +483,9 @@ export const climagestRepository = {
 
     return {
       organizationId,
+      organization: {
+        name: organizationResult.data!.name,
+      },
       users,
       clients: (clientsResult.data ?? []).map((client) => ({
         id: client.id,
@@ -406,7 +502,6 @@ export const climagestRepository = {
         address: machine.installation_address,
       })),
       jobs,
-      nextJobNumber: organizationResult.data?.next_work_order_number ?? 1,
     };
   },
 
@@ -460,7 +555,7 @@ export const climagestRepository = {
     assertNoError(error, "No se pudo crear la máquina.");
   },
 
-  async saveWorkOrder(job: WorkOrder, currentUser: DemoUser, close = false) {
+  async saveWorkOrder(job: WorkOrder, currentUser: AppUser, close = false) {
     let row: WorkOrderRow;
     let workOrderId = job.id;
     let expectedVersion = job.version;
@@ -490,14 +585,14 @@ export const climagestRepository = {
         p_technician_user_id: job.technicianId,
         p_scheduled_date: job.scheduledDate,
         p_scheduled_time: optionalText(job.scheduledTime) as unknown as string,
-        p_summary: "La oficina corrigió los datos del parte después de su cierre.",
+        p_summary: job.correctionSummary?.trim() ?? "",
         ...commonWorkOrderArgs(job),
       });
       assertNoError(error, "No se pudo guardar la corrección.");
       if (!data) throw new Error("Supabase no devolvió el parte corregido.");
       row = data;
       expectedVersion = data.version;
-    } else if (!close) {
+    } else {
       const { data, error } = await supabase.rpc("update_open_work_order", {
         p_work_order_id: job.id,
         p_expected_version: job.version,
@@ -512,8 +607,6 @@ export const climagestRepository = {
       if (!data) throw new Error("Supabase no devolvió el parte actualizado.");
       row = data;
       expectedVersion = data.version;
-    } else {
-      row = {} as WorkOrderRow;
     }
 
     await syncPhotos(job.organizationId, workOrderId, currentUser.id, job.photos);
@@ -537,7 +630,7 @@ export const climagestRepository = {
         if (uploadedSignaturePath && !job.signatureStoragePath) {
           await supabase.storage.from("work-order-files").remove([uploadedSignaturePath]);
         }
-        throw new Error(error.message);
+        throw new Error("No se pudo cerrar el parte. Comprueba los datos y sincroniza antes de reintentarlo.");
       }
       if (!data) throw new Error("Supabase no devolvió el parte cerrado.");
       row = data;
