@@ -1,5 +1,9 @@
 # Publicación de ClimaGest
 
+## Entrega de los entornos — 21 de octubre de 2026
+
+El commit `b7321d85947df5848132ce2954390bad64e6257d` llegó a `main` con autorización expresa y Vercel confirmó **Ready** en `dpl_7Ta1e8jMF3uGBfXh39oVeXhcaQMn`, publicado en `https://app-parte-aa.vercel.app`. Se verificaron las siete piezas JavaScript de la página: contienen el proyecto productivo y ninguna referencia al de desarrollo. La consulta anónima a clientes devuelve 401. Ambos sitios publicados responden HTTP 200. El navegador comprobó el listado con una sesión administrativa existente y 390 px sin desbordamiento ni errores; no se modificaron registros ni se enviaron correos durante esta comprobación. Dokploy conserva su despliegue existente.
+
 ## Separación de Supabase — 20 de octubre de 2026
 
 Los despliegues públicos siguen usando `rccuxceihlxtaxwwgcfi` (producción). La aplicación local usa ahora `eopawtflvgvesigciwgu` (`climagest-dev`), con datos saneados, cuentas independientes y correo bloqueado. `.env.local` no se transporta a Vercel o Dokploy. Las variables públicas se incorporan al bundle y requieren compilar de nuevo para cambiar de backend. Preview no hereda producción. Las migraciones seleccionan siempre el destino y producción exige confirmación explícita. La entrega autorizada de estos cambios se realiza por `main`; su push activa el build nativo de Vercel. Dokploy requiere su publicación ZIP independiente, descrita más abajo. La función productiva `climagest-invite` sí se actualizó a v3 con JWT obligatorio y CORS limitado a los dos sitios publicados, después de guardar su configuración anterior cifrada y probar la recuperación. Véanse [entornos](environments.md) y ADR 010; los registros siguientes describen publicaciones anteriores.
