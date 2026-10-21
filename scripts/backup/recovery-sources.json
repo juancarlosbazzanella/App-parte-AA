@@ -1,0 +1,39 @@
+{
+  "commit": "bc27d2661edd09a5d0b8d76ce33da6d4071a756e",
+  "files": [
+    {
+      "path": "volumes/api/envoy/envoy.yaml",
+      "url": "https://raw.githubusercontent.com/supabase/supabase/bc27d2661edd09a5d0b8d76ce33da6d4071a756e/docker/volumes/api/envoy/envoy.yaml",
+      "sha256": "3697f23b0be9ec5b829f937c600eb9b878f1f778ab510b42ad5e4f14742447e9"
+    },
+    {
+      "path": "volumes/api/envoy/cds.yaml",
+      "url": "https://raw.githubusercontent.com/supabase/supabase/bc27d2661edd09a5d0b8d76ce33da6d4071a756e/docker/volumes/api/envoy/cds.yaml",
+      "sha256": "1d7514b891370ed27c25911df008887402e16ab09273e6e433225bb7f09f7905"
+    },
+    {
+      "path": "volumes/api/envoy/lds.template.yaml",
+      "url": "https://raw.githubusercontent.com/supabase/supabase/bc27d2661edd09a5d0b8d76ce33da6d4071a756e/docker/volumes/api/envoy/lds.template.yaml",
+      "sha256": "f6b7e2c7a58abf54fe0f5eba6ad144c9f0d2a8c445ab66e05b298fb64bf6fa32"
+    },
+    {
+      "path": "volumes/api/envoy/docker-entrypoint.sh",
+      "url": "https://raw.githubusercontent.com/supabase/supabase/bc27d2661edd09a5d0b8d76ce33da6d4071a756e/docker/volumes/api/envoy/docker-entrypoint.sh",
+      "sha256": "8a0c9503764de32ba39e0d81e73629457b13ec42ef19897e30e4918c996d0508"
+    },
+    {
+      "path": "volumes/functions/main/index.ts",
+      "url": "https://raw.githubusercontent.com/supabase/supabase/bc27d2661edd09a5d0b8d76ce33da6d4071a756e/docker/volumes/functions/main/index.ts",
+      "sha256": "ed402c31abf346198d71cc7bab3b7eead03b91d6b9d638b30fc5e5fada25802b"
+    }
+  ],
+  "images": {
+    "supabase/gotrue:v2.197.0": "supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "postgrest/postgrest:v14.18": "postgrest/postgrest@sha256:c7cd7e265a85b05248abf53f4473fcec7e327c282d0bd0cf60f1551996d09fcf",
+    "supabase/storage-api:v1.81.0": "supabase/storage-api@sha256:98ffec5d0678803783c30e404c27f4ec65e97efbe014088f2a86b4b8b54b9f54",
+    "supabase/realtime:v2.143.3": "supabase/realtime@sha256:768b559241dd234c4e8852c5c0f504e598b80f1df2ad4dd78d5486fbed2f17a2",
+    "supabase/edge-runtime:v1.77.4": "supabase/edge-runtime@sha256:ad45164b7548bf5820ed7be714789c17ac2865edce79a09cfb4c3756c3d365a8",
+    "envoyproxy/envoy:v1.39.1": "envoyproxy/envoy@sha256:57e14a549d7bd43c8d3f6d03e8cfa653e037d4b38e133acd9b54f38c524401b4",
+    "axllent/mailpit:v1.29.1": "axllent/mailpit@sha256:7c38788069433ba9d2d9131abac8d17da0fb18f09b689207ec7a773dcb8d6eee"
+  }
+}

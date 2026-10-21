@@ -4,6 +4,8 @@ Aplicación responsive para gestionar partes de trabajo de una pequeña empresa 
 
 Disponible en [ClimaGest](https://partes.juancarlosbazzanella.es/), con acceso individual por invitación. Frontend actualizado publicado el 20 de octubre de 2026 en el alojamiento existente de Dokploy, con **Usuarios** sin configuración de empresa y numeración nueva fija `PT-`.
 
+También publicado en [ClimaGest en Vercel](https://app-parte-aa.vercel.app/), conectado al repositorio de GitHub y con despliegues automáticos desde `main`. Este destino compila con Next.js nativo y utiliza el mismo Supabase. Los comandos y las variables del proyecto se describen en [la guía de despliegue](docs/deployment.md).
+
 ## Probarlo en el ordenador
 
 Requiere Node.js 22 o posterior y Corepack. El proyecto fija pnpm 11.25.0 con su hash SHA-512.
@@ -17,7 +19,7 @@ pnpm dev
 
 Después abre `http://localhost:5173` en el navegador.
 
-La copia de trabajo ya puede usar un `.env.local` con `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Nunca se debe incluir una clave secreta o `service_role` en variables `NEXT_PUBLIC_*`.
+Configura `.env.local` con la URL y clave publicable de **climagest-dev**, el proyecto de pruebas independiente. La copia de trabajo actual ya está configurada. `pnpm dev` rechaza el backend de producción. Las cuentas de prueba y el flujo de migraciones se explican en [la guía de entornos](docs/environments.md). Nunca se debe incluir una clave secreta o `service_role` en variables `NEXT_PUBLIC_*`.
 
 ## Acceso y roles
 
@@ -40,6 +42,8 @@ pnpm es el único gestor admitido. No uses `npm`, `npx` ni Yarn y no generes otr
 ## Documentación del proyecto
 
 - [Arquitectura](docs/architecture.md)
+- [Desarrollo, producción y migraciones](docs/environments.md)
+- [Backups cifrados y recuperación en Hostinger](docs/backups.md)
 - [Estado actual y registro de cambios](docs/current-state.md)
 - [Auditoría de seguridad del 23-09-2026](docs/security-audit-2026-09-23.md)
 - [Decisiones técnicas](docs/decisions/)

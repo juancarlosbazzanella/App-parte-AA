@@ -1,0 +1,10 @@
+{
+  "prod-ca-2021.crt": {
+    "source": "https://raw.githubusercontent.com/supabase/cli/b1c2e5c1beeb9968752b976ead984c3c32e407f1/apps/cli-go/internal/gen/types/templates/prod-ca-2021.crt",
+    "sha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7"
+  },
+  "prod-ca-2025.crt": {
+    "source": "https://raw.githubusercontent.com/supabase/cli/b1c2e5c1beeb9968752b976ead984c3c32e407f1/apps/cli-go/internal/gen/types/templates/prod-ca-2025.crt",
+    "sha256": "5865d2b26f6128e5795a13ae58b6543599bdb82d808f7f62e3c9a8d7e8527970"
+  }
+}

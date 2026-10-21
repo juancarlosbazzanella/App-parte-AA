@@ -1,0 +1,12 @@
+{
+  "development": {
+    "projectRef": "eopawtflvgvesigciwgu",
+    "name": "climagest-dev",
+    "region": "eu-central-1"
+  },
+  "production": {
+    "projectRef": "rccuxceihlxtaxwwgcfi",
+    "name": "App de partes",
+    "region": "eu-central-1"
+  }
+}

@@ -3,8 +3,8 @@
 begin;
 create temporary table auth_test_ids(key text primary key, id uuid not null) on commit drop;
 insert into auth_test_ids select key, gen_random_uuid() from unnest(array[
-  'org','other_org','admin','office','tech_a','tech_b','outsider',
-  'session_admin','session_office','session_a','session_b','session_outsider',
+  'org','other_org','admin','office','tech_a','tech_b','outsider','backup',
+  'session_admin','session_office','session_a','session_b','session_outsider','session_backup',
   'client_a','client_b','machine_a','machine_b','job_a','job_b','history_b','job_signature'
 ]) key;
 grant select on auth_test_ids to authenticated, anon;
@@ -23,11 +23,11 @@ $$;
 
 insert into auth.users(id,email,raw_user_meta_data)
 select id, id::text || '@example.test', jsonb_build_object('full_name','Authorization fixture')
-from auth_test_ids where key in ('admin','office','tech_a','tech_b','outsider');
+from auth_test_ids where key in ('admin','office','tech_a','tech_b','outsider','backup');
 insert into auth.sessions(id,user_id,created_at,updated_at)
 select pg_temp.fixture(a),pg_temp.fixture(b),now(),now() from (values
   ('session_admin','admin'),('session_office','office'),('session_a','tech_a'),
-  ('session_b','tech_b'),('session_outsider','outsider')
+  ('session_b','tech_b'),('session_outsider','outsider'),('session_backup','backup')
 ) v(a,b);
 insert into public.organizations(id,name) values(pg_temp.fixture('org'),'Authorization fixture'),(pg_temp.fixture('other_org'),'Other tenant');
 insert into public.organization_members(organization_id,user_id,role)
@@ -46,6 +46,37 @@ from (values('job_a','client_a','machine_a','tech_a',1001),('job_b','client_b','
 update public.work_orders set status='closed',work_done='Historical work',closed_by_user_id=pg_temp.fixture('tech_b'),closed_at=now(),no_signature_reason='Fixture' where id=pg_temp.fixture('history_b');
 
 insert into storage.objects(bucket_id,name,metadata) values('work-order-files',pg_temp.fixture('org')||'/'||pg_temp.fixture('job_signature')||'/signature/test.png','{"mimetype":"image/png"}');
+
+-- A backup identity gets Storage SELECT only, without application membership.
+insert into private.backup_storage_readers(user_id) values(pg_temp.fixture('backup'));
+select set_config('request.jwt.claims',json_build_object('sub',pg_temp.fixture('backup'),'role','authenticated','session_id',pg_temp.fixture('session_backup'))::text,true);
+set local role authenticated;
+do $$ declare affected bigint; begin
+  assert private.is_backup_storage_reader(), 'Live allowlisted backup session';
+  assert exists(select 1 from storage.objects where name=pg_temp.fixture('org')||'/'||pg_temp.fixture('job_signature')||'/signature/test.png'), 'Backup downloads all tenants';
+  assert (select count(*) from public.clients)=0, 'Backup has no application clients';
+  assert (select count(*) from public.work_orders)=0, 'Backup has no application parts';
+  begin
+    update storage.objects set metadata='{"forged":true}' where name=pg_temp.fixture('org')||'/'||pg_temp.fixture('job_signature')||'/signature/test.png';
+    get diagnostics affected = row_count;
+    assert affected=0, 'Backup cannot overwrite objects';
+  exception when insufficient_privilege then null; end;
+  begin
+    delete from storage.objects where name=pg_temp.fixture('org')||'/'||pg_temp.fixture('job_signature')||'/signature/test.png';
+    get diagnostics affected = row_count;
+    assert affected=0, 'Backup cannot delete objects';
+  exception when insufficient_privilege then null; end;
+end $$;
+select pg_temp.assert_denied('insert into storage.objects(bucket_id,name,metadata) values(''work-order-files'',''unauthorized-backup-upload'',''{}'')');
+select pg_temp.assert_denied('update private.backup_storage_readers set enabled=true');
+reset role;
+delete from auth.sessions where id=pg_temp.fixture('session_backup');
+set local role authenticated;
+do $$ begin
+  assert not private.is_backup_storage_reader(), 'Revoked backup session loses access immediately';
+  assert not exists(select 1 from storage.objects where name=pg_temp.fixture('org')||'/'||pg_temp.fixture('job_signature')||'/signature/test.png'), 'Backup cannot read after session revocation';
+end $$;
+reset role;
 
 set local role anon;
 select pg_temp.assert_denied('select * from public.clients');

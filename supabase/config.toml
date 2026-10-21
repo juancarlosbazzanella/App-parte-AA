@@ -64,10 +64,11 @@ schema_paths = []
 
 [db.seed]
 # If enabled, seeds the database after migrations during a db reset.
-enabled = true
+enabled = false
+# The historical demo seed is already a migration. Do not load a missing seed.sql.
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
-sql_paths = ["./seed.sql"]
+sql_paths = []
 
 [db.network_restrictions]
 # Enable management of network restrictions.
@@ -159,7 +160,7 @@ site_url = "http://localhost:5173"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["http://localhost:5173/?auth=setup", "http://localhost:5173/?auth=reset", "http://127.0.0.1:5173/?auth=setup", "http://127.0.0.1:5173/?auth=reset", "https://partes.juancarlosbazzanella.es/?auth=setup", "https://partes.juancarlosbazzanella.es/?auth=reset"]
+additional_redirect_urls = ["http://localhost:5173/?auth=setup", "http://localhost:5173/?auth=reset", "http://127.0.0.1:5173/?auth=setup", "http://127.0.0.1:5173/?auth=reset"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 900
 # JWT issuer URL. If not set, defaults to auth.external_url.

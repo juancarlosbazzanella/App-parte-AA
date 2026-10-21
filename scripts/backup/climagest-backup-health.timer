@@ -1,0 +1,11 @@
+[Unit]
+Description=Hourly ClimaGest backup freshness check
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=5min
+Persistent=true
+Unit=climagest-backup-health.service
+
+[Install]
+WantedBy=timers.target

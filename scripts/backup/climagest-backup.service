@@ -1,0 +1,25 @@
+[Unit]
+Description=ClimaGest encrypted Supabase backup
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+OnFailure=climagest-backup-alert.service
+StartLimitIntervalSec=2h
+StartLimitBurst=3
+
+[Service]
+Type=oneshot
+User=root
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/climagest-backup/supabase_backup.py --config /etc/climagest-backup/config.json
+ExecStartPost=/usr/bin/python3 /opt/climagest-backup/backup_operations.py --config /etc/climagest-backup/config.json --event after-success --apply-retention
+TimeoutStartSec=20min
+Restart=on-failure
+RestartSec=15min
+Nice=10
+IOSchedulingClass=idle
+NoNewPrivileges=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/backups/climagest /run
+PrivateTmp=yes

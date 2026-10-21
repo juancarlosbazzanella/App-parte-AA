@@ -1,0 +1,15 @@
+[Unit]
+Description=ClimaGest backup failure notification
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/climagest-backup/backup_operations.py --config /etc/climagest-backup/config.json --event failure
+TimeoutStartSec=1min
+NoNewPrivileges=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/backups/climagest /run
+PrivateTmp=yes

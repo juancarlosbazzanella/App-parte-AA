@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily encrypted ClimaGest backup
+
+[Timer]
+OnCalendar=*-*-* 03:15:00 Europe/Madrid
+RandomizedDelaySec=10min
+Persistent=true
+Unit=climagest-backup.service
+
+[Install]
+WantedBy=timers.target

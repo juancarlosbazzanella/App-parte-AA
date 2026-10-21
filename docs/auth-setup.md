@@ -1,5 +1,9 @@
 # Puesta en marcha del acceso y el correo
 
+## Entornos separados — 20 de octubre de 2026
+
+Esta guía SMTP corresponde al proyecto de **producción** `rccuxceihlxtaxwwgcfi`. El nuevo `climagest-dev` usa cuentas ficticias independientes, no tiene SMTP copiado y su función rechaza invitaciones. `.env.local` apunta a desarrollo. Sus retornos solo admiten localhost/127.0.0.1 en 5173. Las URLs productivas listadas más abajo describen la configuración remota conservada; `supabase/config.toml` solo describe desarrollo local y no debe publicarse sobre producción. Véase [la guía de entornos](environments.md).
+
 ## Estado al 16 de octubre de 2026
 
 Resend confirmó el dominio como **Verified** y Supabase confirmó el guardado de SMTP personalizado con la clave introducida directamente por el usuario. El administrador confirmó la recepción del correo de recuperación, el cambio de contraseña y el acceso posterior al solicitar y abrir un nuevo enlace en el mismo navegador. Una consulta de solo lectura confirmó el inicio de sesión reciente y el rol administrador activo. La entrega y activación de una invitación a un nuevo destinatario real todavía no se han probado con SMTP. Las instrucciones siguientes se conservan como referencia de configuración.
@@ -42,14 +46,16 @@ Durante las pruebas locales, abre el correo en el mismo ordenador y completa la 
 
 En el proyecto remoto se ha desactivado el registro público y se han exigido contraseñas de 15 caracteres con mayúsculas, minúsculas, números y símbolos, además de cambio de contraseña seguro. Los tokens de acceso nuevos duran 900 segundos y mantienen rotación de refresh tokens. Se permite confirmar correo y se mantienen desactivados el acceso anónimo y el enlace manual de identidades.
 
-En **URL Configuration** deben mantenerse el Site URL de la aplicación publicada y estas seis redirecciones exactas:
+En **URL Configuration** de producción se mantiene el Site URL `https://partes.juancarlosbazzanella.es` y estas cuatro redirecciones exactas:
 
 - `https://partes.juancarlosbazzanella.es/?auth=setup`
 - `https://partes.juancarlosbazzanella.es/?auth=reset`
-- `http://localhost:5173/?auth=setup`
-- `http://localhost:5173/?auth=reset`
-- `http://127.0.0.1:5173/?auth=setup`
-- `http://127.0.0.1:5173/?auth=reset`
+- `https://app-parte-aa.vercel.app/?auth=setup`
+- `https://app-parte-aa.vercel.app/?auth=reset`
+
+El 21 de octubre se retiraron los cuatro retornos locales de producción. Esas URLs pertenecen ahora exclusivamente al proyecto de desarrollo. Se desplegó la función productiva v3 con JWT obligatorio y CORS para los dos sitios publicados; se comprobaron OPTIONS 204 desde ambos, 403 desde ambos orígenes locales y POST 401 sin JWT, sin enviar correos. La configuración y función anteriores se custodiaron cifradas antes del cambio.
+
+El 20 de octubre de 2026 se añadieron las dos URLs de Vercel y se configuró `CLIMAGEST_APP_ORIGIN=https://app-parte-aa.vercel.app` en el entorno de Edge Functions. El código desplegado de `climagest-invite` ya admite ese origen adicional. Se verificó OPTIONS con HTTP 204 y el origen correcto tanto desde Vercel como desde el dominio anterior, y HTTP 403 para un origen ajeno. Las comprobaciones no enviaron correos ni crearon usuarios. No se añaden comodines para dominios de preview. Las sesiones son independientes entre dominios: el usuario inicia sesión de nuevo al acceder desde Vercel.
 
 La comprobación de contraseñas filtradas requiere un plan Pro o superior. El proyecto actual usa Free y no se ha contratado ningún plan adicional. Las sesiones y los permisos se validan en la base de datos aunque el JWT todavía no haya expirado.
 

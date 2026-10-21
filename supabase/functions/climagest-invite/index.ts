@@ -1,16 +1,18 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Only these application origins may receive account-activation links.
-const allowedOrigins = new Set([
-  "https://partes.juancarlosbazzanella.es", "http://localhost:5173", "http://127.0.0.1:5173",
-]);
+// Development has its own origin list and never inherits production mail access.
+const projectHost = new URL(Deno.env.get("SUPABASE_URL")!).hostname;
+const production = projectHost === "rccuxceihlxtaxwwgcfi.supabase.co";
+const allowedOrigins = new Set(production
+  ? ["https://partes.juancarlosbazzanella.es", "https://app-parte-aa.vercel.app"]
+  : ["http://localhost:5173", "http://127.0.0.1:5173"]);
 const additionalOrigin = Deno.env.get("CLIMAGEST_APP_ORIGIN");
 if (additionalOrigin) allowedOrigins.add(new URL(additionalOrigin).origin);
 
 Deno.serve(async (request: Request) => {
   const origin = request.headers.get("Origin") ?? "";
   const headers = {
-    "Access-Control-Allow-Origin": allowedOrigins.has(origin) ? origin : "https://partes.juancarlosbazzanella.es",
+    "Access-Control-Allow-Origin": allowedOrigins.has(origin) ? origin : "null",
     "Access-Control-Allow-Headers": "authorization, apikey, x-client-info, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Content-Type": "application/json",
@@ -32,6 +34,7 @@ Deno.serve(async (request: Request) => {
   });
   const { data: { user }, error: userError } = await caller.auth.getUser(authorization.slice(7));
   if (userError || !user) return respond(401, { error: "La sesión ha caducado. Vuelve a entrar." });
+  if (!production) return respond(503, { error: "El envío de invitaciones está desactivado en desarrollo. Usa las cuentas de prueba." });
   try {
     if (Number(request.headers.get("Content-Length") ?? 0) > 4096) return respond(413, { error: "La solicitud es demasiado grande." });
     const input = await request.json();

@@ -1,6 +1,6 @@
 # Estado actual
 
-Última actualización: 20 de octubre de 2026.
+Última actualización: 21 de octubre de 2026.
 
 ## Implementado
 
@@ -17,8 +17,10 @@
 - Aislamiento por empresa y permisos de administrador/oficina/técnico aplicados con RLS.
 - Numeración atómica, control de edición concurrente y auditoría de correcciones posteriores al cierre.
 - Migraciones reproducibles y tipos TypeScript generados desde la base remota.
+- Supabase separado: producción conserva `App de partes` y desarrollo usa `climagest-dev`, en MarboxAI/Frankfurt, con copia saneada, cuentas independientes y correo bloqueado. `.env.local` y las protecciones de arranque evitan usar producción en desarrollo; migraciones con destino explícito. Véanse `environments.md` y ADR 010.
 - Diseño responsive para móvil, tableta y ordenador.
 - Frontend actualizado publicado el 20 de octubre de 2026 en `https://partes.juancarlosbazzanella.es` mediante el servicio existente de Dokploy.
+- Despliegue de producción adicional en `https://app-parte-aa.vercel.app`, conectado a GitHub y actualizado automáticamente desde `main`, con compilación nativa de Next.js y el mismo Supabase. Véanse `deployment.md` y ADR 009.
 - Repositorio Git inicializado en la rama `main`, con secretos y artefactos generados excluidos del control de versiones.
 - Gestor de dependencias migrado a pnpm 11.25.0 con versión e integridad fijadas, lockfile congelado y controles contra publicaciones recientes, fuentes transitivas exóticas y scripts de instalación no autorizados.
 - Suite automatizada con Vitest y React Testing Library para acceso, contratos del repositorio, archivos privados y flujos críticos de oficina/técnico; comandos `test`, `test:watch`, `test:coverage` y `test:auth`. Véanse `testing.md` y ADR 007.
@@ -26,9 +28,77 @@
 
 ## Límites vigentes
 
-La entrega y activación de una invitación a un nuevo destinatario real todavía no se han probado con SMTP. Las copias de partes por correo siguen simuladas. No hay PDF, facturación, contabilidad, nóminas, almacén, rutas ni funcionamiento sin conexión. Las cuentas demo están desactivadas. La suite React usa jsdom y no sustituye pruebas de navegador, diseño responsive o integraciones reales; la pantalla administrativa completa y la Edge Function no tienen suite de ejecución propia. La ejecución local de la suite SQL requiere Docker/Podman, ausentes en este equipo; pasó en Supabase remoto con rollback el 20 de octubre. La auditoría de dependencias mantiene un aviso alto sin parche publicado en braces, usado por herramientas de desarrollo; véase `security-auth-2026-10-15.md`. La protección contra contraseñas filtradas requiere Supabase Pro y no se ha contratado. El panel de administración de Dokploy sigue usando HTTP. Las operaciones Git de escritura requieren autorización expresa; el commit `f820af9` se entregó en `main` con permiso del usuario, que también ha autorizado subir el registro del despliegue y la alineación posterior del nombre de migración.
+La entrega y activación de una invitación a un nuevo destinatario real todavía no se han probado con SMTP. Las copias de partes por correo siguen simuladas. No hay PDF, facturación, contabilidad, nóminas, almacén, rutas ni funcionamiento sin conexión. Las cuentas demo están desactivadas. La suite React usa jsdom y no sustituye pruebas de navegador, diseño responsive o integraciones reales; la pantalla administrativa completa y la Edge Function no tienen suite de ejecución propia. La ejecución local de la suite SQL requiere Docker/Podman, ausentes en este equipo; pasó en desarrollo remoto y en la recuperación aislada del VPS con rollback el 21 de octubre. La auditoría de dependencias mantiene un aviso alto sin parche publicado en braces, usado por herramientas de desarrollo; véase `security-auth-2026-10-15.md`. La protección contra contraseñas filtradas requiere Supabase Pro y no se ha contratado. El panel de administración de Dokploy sigue usando HTTP. Las operaciones Git de escritura requieren autorización expresa; el commit `f820af9` se entregó en `main` con permiso del usuario, que también ha autorizado subir el registro del despliegue y la alineación posterior del nombre de migración.
 
 ## Registro de cambios
+
+### 2026-10-21 — Cierre operativo de backups y recuperación de servicios
+
+- El propietario autorizó expresamente `git add`, `git commit` y `git push` a `main` para los cambios revisados. También eligió el correo del administrador para los avisos.
+- Se renovó el acceso temporal al VPS, manteniendo sus restricciones, caducidad y huella verificada. Se retirará otra vez al cerrar esta intervención.
+- Se instaló `backup_operations.py`: retención de las últimas 30 jornadas, 8 semanas y 12 meses con copias, las tres copias más recientes, siete días mínimos y la última restauración verificada. Solo gestiona copias con recibo completo y hashes correctos; las copias antiguas desconocidas no se borran.
+- Las 20 pruebas Python del operador pasan, incluidas corrupción, ausencia de restauración, enlace simbólico, proyecto ajeno y fallo de envío. La retención se ejecuta después de un backup correcto y no ha borrado copias del día.
+- Se configuró una clave de Resend independiente, de envío y limitada al dominio. El propietario completó su creación; no se copió una clave personal ni la credencial SMTP de Supabase. Resend confirmó **delivered** para el mensaje de activación. El aviso no adjunta datos ni errores privados. Se deduplica por incidente y día y el canal tiene comprobación horaria de antigüedad máxima de 36 horas.
+- El simulacro detectó y corrigió la ausencia de `rolconfig` en el inventario. Se incorporaron las rutas de esquema de Auth y límites de roles; las copias incluyen también la configuración activa del operador cifrada. La transferencia de SQL a tmpfs valida SHA-256 antes de `pg_restore`. El enlace OnFailure de systemd pasó una prueba aislada con aviso deduplicado.
+- El verificador rechaza archivos de control de otra ejecución y resultados de navegador fallidos para evitar validar una recuperación con evidencias antiguas.
+- El gateway desechable utiliza el alias DNS oficial de Realtime, necesario para que resuelva su servicio y tenant.
+- La importación de firmas SVG históricas amplía temporalmente solo la lista MIME de los buckets desechables y la restablece exactamente en `finally`, incluso si falla una subida. No cambia Storage productivo.
+- Pasó el simulacro de servicios sobre `20261021T154935Z`: 47 tablas, 24 políticas, suite SQL, Auth de administrador/técnico, REST, seis objetos por API con SHA-256, invitación Edge, rechazo del técnico y un correo capturado en Mailpit. Realtime recibió el INSERT después de confirmar la suscripción a PostgreSQL. Todo usó red interna sin salida ni puertos publicados y claves nuevas.
+- El navegador verificó administrador, parte histórico con foto y firma cargadas, y técnico a 390 × 844 sin desbordamiento ni errores de consola. Cerró el parte ficticio y confirmó su persistencia tras recargar. Se cerraron ambas sesiones de navegador; los datos de estas pruebas solo existieron en el contenedor desechable.
+- Pasaron las 100 pruebas de aplicación, 20 pruebas Python, lint, tipos limpios y compilaciones vinext/Next.js. La auditoría conserva los ocho avisos conocidos, incluido braces alto sin parche. La custodia externa corresponde al propietario.
+
+
+### 2026-10-21 — Entornos separados y backup cifrado activo
+
+- El propietario instaló la clave renovada y la conexión SSH pasó con la huella del host fijada. Se verificaron recursos suficientes, sin reiniciar servicios existentes. Al cerrar la intervención se retiró exclusivamente esa clave del VPS y se verificó el rechazo de una conexión nueva. Se eliminaron la identidad SSH local y el comando de alta; la clave age se conserva.
+- Se instalaron scripts de backup y recuperación, certificados oficiales de Supabase y una imagen PostgreSQL fijada por digest. La clave privada de age permanece en el Mac y el VPS recibe solo el destinatario público. La copia final `20261021T122122Z` pasó la restauración: **47 tablas, 6 objetos, 24 políticas RLS y suite de autorización ampliada**, con red aislada y datos en tmpfs. Hay copia cifrada en VPS y Mac; se comprobó también el descifrado de la configuración disponible de Auth y la función Edge. No se presenta como un simulacro completo de todos los servicios de Supabase.
+- Las **11 migraciones** coinciden en ambos proyectos. Las dos nuevas se aplicaron primero en desarrollo y después en producción. El lector PostgreSQL permanece `NOLOGIN` en desarrollo y usa una contraseña SCRAM aleatoria fuera de migraciones en producción. Storage usa una cuenta técnica sin acceso a la aplicación y con política SELECT, lista privada y sesión revocable; no se creó una clave S3. Se retiraron los secretos de bootstrap. Las descargas usan nonce y validan ETag, tamaño y hash para evitar respuestas CDN antiguas.
+- Se retiraron cuatro retornos locales de Auth productivo y se desplegó la función v3 con JWT obligatorio. Se verificaron ambos sitios publicados con OPTIONS 204, localhost/127.0.0.1 con 403 y POST sin JWT con 401, sin enviar correos. Auth y función anteriores quedaron cifradas para recuperación.
+- El servicio terminó correctamente y el temporizador diario está **habilitado y activo** a las 03:15 de Madrid, con hasta diez minutos de dispersión y dos reintentos limitados. No hay borrado automático ni alertas externas. El propietario debe custodiar otra copia cifrada fuera del VPS y del Mac y su clave separadamente, y revisar semanalmente el resultado. No se ejecutaron operaciones Git de escritura. Véanse `backups.md` y ADR 011.
+- Se actualizó Vite de 8.0.16 a **8.1.6**, publicado hace más de siete días, por nuevos avisos de seguridad; instalación congelada y controles de pnpm conservados. Pasaron las 100 pruebas, lint, tipos limpios y compilaciones vinext y nativa de Next.js. La auditoría vuelve a los ocho avisos conocidos: dos bajos, cinco moderados y uno alto sin parche en braces; sigue fallando y no se ha suprimido.
+
+### 2026-10-21 — Acceso temporal renovado para Hostinger
+
+- A petición del propietario se generó una nueva clave SSH de cuatro horas, válida hasta las 17:26 de Madrid. La clave privada y el comando de instalación permanecen en el directorio ignorado `outputs/supabase-environments/hostinger-private/`, con permisos restrictivos.
+- El comando actualizado retira exclusivamente la clave anterior identificada por su contenido público, conserva las demás y añade la nueva con restricciones de reenvío y PTY. Su ejecución por el propietario y la comprobación de acceso siguen pendientes; todavía no hay backup recuperable ni tarea periódica.
+
+### 2026-10-20 — VPS inspeccionado y acceso temporal preparado
+
+- Tras iniciar sesión el propietario, se abrió la consola web HTTPS de Hostinger. La inspección de solo lectura confirmó Ubuntu 24.04.4, Docker 29.6.1, 66 GiB libres y 5,4 GiB de RAM disponibles. Se reconocieron la aplicación publicada, Dokploy y automatizaciones existentes, sin reiniciarlos ni modificarlos. No se contrató ningún servicio.
+- La huella SSH se verificó contra la consola autenticada. Se prepararon una clave temporal de cuatro horas y un comando de alta, con archivos privados bajo `outputs/`, excluidos de Git. El propietario debe ejecutar el alta; no se ha añadido aún esa clave al VPS. Se retirará al acabar la operación.
+- Los backups cifrados, la restauración aislada y la programación siguen pendientes. Tampoco se modificaron datos o configuración de producción ni se ejecutaron operaciones Git de escritura.
+
+### 2026-10-20 — Backups previstos en el VPS de Hostinger
+
+- El propietario pidió usar Hostinger en lugar de instalar Docker en su Mac. Se orienta el backup y la restauración de prueba al VPS existente con Dokploy; los dos proyectos de Supabase conservan sus funciones actuales. Se prevén copias cifradas, clave separada, permisos restrictivos y una segunda copia fuera del VPS; aún no se ha generado un backup recuperable ni activado tareas periódicas.
+- Se abrió hPanel y se comprobó que requiere iniciar sesión de nuevo. Este Mac no tiene configuración SSH ni identidades cargadas en el agente. El siguiente paso guiado es el acceso del propietario a Hostinger y la inspección de su VPS mediante el panel o consola web. No se reinstaló ningún servidor, no se modificó la aplicación pública y no se ejecutaron operaciones Git de escritura.
+
+### 2026-10-20 — Acceso CLI confirmado y preparación guiada del backup
+
+- El propietario completó la autorización del CLI de Supabase. `projects list` reconoce los dos proyectos de MarboxAI y pasaron los wrappers `db:dev:status` y `db:prod:status`: las nueve versiones locales y remotas coinciden en ambos entornos. No se aplicaron migraciones.
+- Se eligió copia local cifrada y custodia de otra copia externa por el propietario. El backup y su prueba de recuperación siguen pendientes: no hay Docker/Podman ni clientes PostgreSQL en este Mac Apple silicon. Se continúa paso a paso con la instalación oficial de Docker Desktop y su aceptación de condiciones por el propietario. No se pidió ni se mostró el token del CLI.
+- Un intento controlado de volcado de esquema, usando el proyecto explícito y un directorio temporal privado, falló por la ausencia de Docker. El archivo quedó vacío y el directorio se eliminó automáticamente. El diagnóstico confirma el requisito local; no se ha generado todavía un backup recuperable ni se han exportado datos de clientes.
+- La retirada de retornos locales y el despliegue de la función endurecida de producción siguen pendientes. No se ejecutaron operaciones Git de escritura ni cambios en los datos de producción durante esta comprobación.
+
+### 2026-10-20 — Separación de desarrollo y producción
+
+- Tras elegir el usuario MarboxAI, Frankfurt y copia anonimizada, Supabase cotizó 0 USD/mes y creó `climagest-dev` (`eopawtflvgvesigciwgu`). El proyecto actual `rccuxceihlxtaxwwgcfi` conserva producción; no se escribieron datos o configuración productivos.
+- Se reprodujeron las nueve migraciones sin editar su SQL y se alinearon las versiones originales solo en el nuevo historial tras verificar los archivos aplicados. La copia SELECT saneada conserva 7 clientes, 8 máquinas, 14 partes y 1 corrección con IDs nuevos, 7 identidades sintéticas y 3 cuentas QA. Excluye datos personales, credenciales, sesiones, invitaciones, eventos y medios reales. Los partes abiertos de oficina se asignan al técnico QA y los cierres firmados indican omisión de firma.
+- Se añadieron registro de destinos, wrappers de migración, exportador saneado y preparador de importación transaccional para un proyecto nuevo. No desactivan triggers ni restricciones. Se configuró `.env.local` para desarrollo y se reinició el servidor local. El arranque y Next.js protegen desarrollo/previews; el CLI usa referencias explícitas y exige confirmación técnica adicional para producción.
+- Auth de desarrollo tiene registro cerrado, política robusta, retornos locales exactos y sesiones separadas. Se desplegó la función con JWT y correo bloqueado solo en desarrollo, sin copiar SMTP. El código productivo de la función y sus retornos remotos quedan pendientes de endurecimiento posterior; no se han redeplegado.
+- Pasó la suite SQL completa de autorización en desarrollo con rollback. Los avisores solo mantienen protección de contraseñas filtradas no habilitada en Free. Los tipos públicos coinciden; la diferencia informativa es PostgREST 14.18 frente a 14.17. La auditoría sigue con los ocho avisos conocidos, incluido `braces` alto sin parche; no se cambian dependencias ni controles.
+- Pasaron documentación, las 100 pruebas, lint, tipos y build. La integración real verificó los tres roles y tokens de 900 segundos, denegación anónima, creación/cierre por RPC, Realtime y Storage privado con imagen sintética, bloqueo de archivos cerrados y de invitaciones/cross-origin. Se retiraron dos partes temporales y el archivo; quedan 14 partes y contador 1022 en desarrollo. El navegador confirmó administrador y datos ficticios. PostgreSQL es 17.11 en desarrollo y 17.6 en producción, sin actualizar el motor productivo.
+- Pasó también el build nativo de Next.js y la comprobación posterior de tipos. El navegador confirmó el técnico, listado y detalle a 725 px sin desbordamiento, sin errores de consola; oficina se comprobó por API. Se restauró la ventana normal y se dejó el servidor local con desarrollo. La lectura final de producción conserva 7 clientes, 8 máquinas, 14 partes, 6 objetos, 9 migraciones y contador 1020.
+- Se revocaron las ocho sesiones temporales de integración Node/curl de las cuentas QA, conservando las del navegador. Se eliminaron los payloads de login, tokens HTTP y SQL de importación con contraseñas; las tres credenciales QA permanecen en su archivo ignorado `0600`, dentro de una carpeta `0700`.
+- El CLI de este ordenador no tiene sesión; el conector autenticado permitió las operaciones remotas. Los archivos con contraseñas y evidencias permanecen ignorados con permisos restrictivos. No se hicieron operaciones Git de escritura ni publicaciones productivas. El runbook registra límites, promoción, backups y responsabilidades del propietario.
+
+### 2026-10-20 — GitHub conectado a Vercel y despliegue de producción
+
+- Se creó `app-parte-aa` en Vercel, conectado a `juancarlosbazzanella/App-parte-AA` y `main`, desde el commit `e2e1aef`. Vercel confirmó **Ready** y asignó `https://app-parte-aa.vercel.app`. El usuario autorizó instalar la aplicación oficial de GitHub solo para este repositorio y completó la verificación por correo.
+- El proyecto remoto usa Next.js nativo, Corepack, pnpm 11.25.0 e instalación congelada, conservando los controles de suministro y los comandos vinext existentes. La preferencia Node.js 22.x queda sobreescrita por el rango del repositorio: el despliegue efectivo usa 24.x, con aviso de actualización automática. No se cambian dependencias.
+- Las dos variables públicas de Supabase se limitaron a Production. Se añadieron dos redirecciones exactas de autenticación y `CLIMAGEST_APP_ORIGIN` para admitir el dominio estable en las invitaciones. Se alineó la lista local de `supabase/config.toml`, conservando el Site URL remoto, dominios y orígenes anteriores, sin comodines para previews.
+- Se verificaron HTTPS 200, login y recuperación en navegador sin errores de consola, móvil a 390 × 844 sin desbordamiento, rechazo anónimo de `clients` con 401 y CORS de invitaciones con 204 para ambos dominios y 403 para un origen ajeno. No se enviaron correos ni se crearon datos. El acceso autenticado con una sesión nueva desde Vercel queda fuera de esta verificación.
+- Pasaron instalación congelada, las 93 pruebas, lint, tipos y ambas compilaciones. Se limpió `.next/` antes de la comprobación final para retirar tipos residuales incompatibles entre Next.js nativo y vinext; el procedimiento queda documentado. La auditoría mantiene los ocho avisos conocidos, incluido `braces` alto sin parche. La documentación y la configuración local quedan sin stage; no se ejecutaron operaciones Git de escritura, migraciones ni cambios de DNS.
 
 ### 2026-10-20 — Sincronización autorizada tras la publicación
 

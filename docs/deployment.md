@@ -1,5 +1,23 @@
 # Publicación de ClimaGest
 
+## Separación de Supabase — 20 de octubre de 2026
+
+Los despliegues públicos siguen usando `rccuxceihlxtaxwwgcfi` (producción). La aplicación local usa ahora `eopawtflvgvesigciwgu` (`climagest-dev`), con datos saneados, cuentas independientes y correo bloqueado. `.env.local` no se transporta a Vercel o Dokploy. Las variables públicas se incorporan al bundle y requieren compilar de nuevo para cambiar de backend. Preview no hereda producción. Las migraciones seleccionan siempre el destino y producción exige confirmación explícita. La entrega autorizada de estos cambios se realiza por `main`; su push activa el build nativo de Vercel. Dokploy requiere su publicación ZIP independiente, descrita más abajo. La función productiva `climagest-invite` sí se actualizó a v3 con JWT obligatorio y CORS limitado a los dos sitios publicados, después de guardar su configuración anterior cifrada y probar la recuperación. Véanse [entornos](environments.md) y ADR 010; los registros siguientes describen publicaciones anteriores.
+
+## Vercel conectado a GitHub — 20 de octubre de 2026
+
+- Proyecto: `app-parte-aa`, espacio `juancarlosbazzanella` (Hobby), enlazado a `juancarlosbazzanella/App-parte-AA`. La aplicación oficial de Vercel en GitHub está limitada a ese repositorio, tras autorización y verificación de identidad del usuario.
+- Producción: `https://app-parte-aa.vercel.app/`. Vercel confirmó **Ready** para `dpl_8oWPxTqsoPVUvF4bV3N7XTGhs2cL`, desde `main` y el commit `e2e1aefe22d3a326df9396e4b09fc62275a42297`. Los futuros pushes autorizados a `main` se despliegan automáticamente.
+- Preset Next.js, raíz `./` y salida predeterminada. Instalación: `corepack pnpm install --frozen-lockfile`. Build: `node scripts/prepare-deployment.mjs && corepack pnpm run docs:check && corepack pnpm exec next build`. Esto evita la salida vinext/Cloudflare de `pnpm build` en este destino.
+- `ENABLE_EXPERIMENTAL_COREPACK=1` en Production/Preview. Solo Production tiene `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, del Supabase existente. No se carga ninguna credencial de servidor. No se configura Supabase de producción para previews.
+- La preferencia del proyecto es Node.js 22.x; Vercel muestra 24.x como versión efectiva porque prevalece `engines.node >=22.13.0`. El build remoto confirmó pnpm 11.25.0 y Next.js 16.3.8, instalación congelada y comprobación documental correctas. El rango amplio de Node genera un aviso de actualización automática de versión principal.
+- Se añadieron en Supabase las redirecciones exactas `https://app-parte-aa.vercel.app/?auth=setup` y `https://app-parte-aa.vercel.app/?auth=reset`. Se configuró el origen adicional `CLIMAGEST_APP_ORIGIN=https://app-parte-aa.vercel.app` para la función existente de invitaciones, sin redeplegar su código. Se conservaron las seis redirecciones anteriores y el Site URL de Dokploy.
+- Verificación: HTTPS HTTP 200 en la página principal y la URL de recuperación; login y formulario de recuperación visibles, sin errores de consola; móvil a 390 × 844 sin desbordamiento. La consulta anónima a `clients` se rechazó con 401. OPTIONS de invitaciones respondió 204 para ambos dominios y rechazó un origen ajeno con 403. No se enviaron correos, no se crearon registros ni se comprobaron sesiones autenticadas nuevas en Vercel.
+- Pasaron instalación congelada, documentación, 93 pruebas, lint, tipos limpios, build vinext y build nativo de Next.js. La auditoría conserva los ocho avisos conocidos, incluido el alto sin parche de `braces` en herramientas de desarrollo; no se alteraron dependencias ni controles de suministro.
+- Evidencias locales ignoradas: `outputs/vercel-deployment-2026-10-20/`. La documentación y las redirecciones del `supabase/config.toml` local quedan sin stage. No se ejecutaron `git add`, `git commit`, `git push`, migraciones ni cambios de DNS. El dominio personalizado y Dokploy siguen disponibles. Véase ADR 009.
+
+Al alternar verificaciones locales entre Next.js nativo y vinext, limpiar primero la carpeta generada `.next/`: ambos generan tipos de rutas y los archivos residuales de un motor pueden causar errores de tipos al ejecutar el otro. La comprobación final de tipos y `pnpm build` se ejecutó tras esa limpieza. Los builds de Vercel parten del checkout remoto, sin estos artefactos locales.
+
 ## Alojamiento existente
 
 La aplicación se aloja en el VPS de Hostinger mediante Dokploy, con el dominio `https://partes.juancarlosbazzanella.es`. El servicio existente es `App-partes-AA`, dentro de `App Partes AA`, entorno `production`.

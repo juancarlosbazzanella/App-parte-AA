@@ -2,7 +2,7 @@
 
 ## Visión general
 
-ClimaGest es una aplicación web responsive construida con Next.js 16, React 19 y TypeScript. La interfaz se sirve desde el despliegue público de Dokploy o el servidor de desarrollo local y consume Supabase para autenticación, PostgreSQL, Storage y Realtime. La autorización se aplica en la base además de limitar la interfaz.
+ClimaGest es una aplicación web responsive construida con Next.js 16, React 19 y TypeScript. Vercel y Dokploy consumen el Supabase de producción existente; el servidor local consume el proyecto independiente `climagest-dev`. Cada backend mantiene su propio Auth, PostgreSQL, Storage y Realtime. La autorización se aplica en la base además de limitar la interfaz. Véanse [entornos](environments.md) y ADR 010.
 
 ## Módulos
 
@@ -18,6 +18,8 @@ ClimaGest es una aplicación web responsive construida con Next.js 16, React 19 
 - `src/lib/supabase.ts`: cliente tipado creado con URL y clave publicable.
 - `src/lib/database.types.ts`: tipos generados desde el esquema PostgreSQL.
 - `supabase/migrations/`: esquema, RLS, funciones, Storage y datos de demostración versionados.
+- `supabase/environments.json`, `scripts/environment-policy.mjs` y `scripts/supabase-environment.mjs`: destinos explícitos y barreras contra mezclar desarrollo y producción.
+- `supabase/data/export-development.sql` y `scripts/development-snapshot.mjs`: exportación saneada en origen y preparación transaccional de una copia nueva de pruebas, independiente de las migraciones compartidas.
 - `pnpm-lock.yaml` y `pnpm-workspace.yaml`: grafo reproducible y política de seguridad de la cadena de suministro.
 - `vitest.config.ts` y `tests/`: pruebas aisladas del repositorio y flujos React, fixtures ficticios y suite SQL de autorización; véase `testing.md` y ADR 007.
 - `src/db/`: andamiaje D1 anterior, inactivo y sin participación en el flujo actual.
@@ -34,6 +36,8 @@ El proyecto usa exclusivamente pnpm 11.25.0, fijado junto con su integridad SHA-
 
 El despliegue existente utiliza Dokploy y Railpack. `railpack.json` fija Node 22.23.3 y reemplaza la instalación automática de herramientas por Corepack incluido en Node 22 y pnpm fijado por el proyecto. El transporte ZIP omite enlaces simbólicos; `prebuild` recrea exclusivamente la guía `CLAUDE.md` si falta y después ejecuta la validación documental estricta. El procedimiento está en `deployment.md`.
 
+Vercel sirve `https://app-parte-aa.vercel.app` desde el proyecto `app-parte-aa`, conectado a GitHub y con producción desde `main`. Sus ajustes remotos sustituyen el build vinext por `next build`, precedido de la preparación de la guía y la comprobación documental, e instalan con Corepack y lockfile congelado. La salida nativa de Next.js y `dist/` son destinos independientes; no se cambian los comandos de desarrollo ni el alojamiento Dokploy. El rango de Node.js del repositorio prevalece sobre la preferencia 22.x del proyecto Vercel, cuyo despliegue efectivo utiliza 24.x. Véanse ADR 009 y `deployment.md`.
+
 ## Acceso
 
 Supabase Auth mantiene sesiones individuales por correo y contraseña. El registro público está desactivado y el acceso se concede por invitación. `organization_members` conserva `admin`, `office` o `technician` y el estado activo; no se confía en metadatos editables. Los ayudantes privados comprueban además `auth.sessions`, por lo que un token de una sesión cerrada deja de autorizar datos.
@@ -42,10 +46,16 @@ Administración gestiona usuarios, además de disponer de los permisos operativo
 
 Los partes solo se escriben por RPC públicas invocadoras de operaciones privadas con permisos de definidor y comprobaciones explícitas. No existe INSERT/UPDATE directo para usuarios autenticados. Oficina/administración pueden cerrar un parte y quedan como autores reales del cierre. La firma pertenece al mismo parte; datos originales de cierre y archivos cerrados son inmutables. Las correcciones requieren motivo y producen auditoría.
 
-Los cambios de miembros se serializan por empresa y quedan auditados. No se puede retirar al último administrador ni dejar partes abiertos asignados a un técnico desactivado o con otro rol. `member_invitations` conserva solicitudes y fallos; una Edge Function verifica JWT, usuario y administrador activo, envía con Auth y completa la pertenencia desde el servidor. La credencial de servicio solo está en Supabase. SMTP personalizado es necesario para la entrega real.
+Los cambios de miembros se serializan por empresa y quedan auditados. No se puede retirar al último administrador ni dejar partes abiertos asignados a un técnico desactivado o con otro rol. `member_invitations` conserva solicitudes y fallos; una Edge Function verifica JWT, usuario y administrador activo, envía con Auth y completa la pertenencia desde el servidor. La función usa una credencial de servicio custodiada en Supabase y el cliente web usa la clave publicable. El backup usa otro usuario técnico sin pertenencia a empresas y una política SELECT de Storage con lista privada y sesión válida; su configuración privada no contiene una clave de servicio ni un token personal de Management API. SMTP personalizado es necesario para la entrega real.
 
 El cliente web usa sesiones persistentes, renovación y PKCE; consume explícitamente enlaces Auth/token_hash y elimina los parámetros sensibles de la URL. El establecimiento de contraseña termina con cierre global de sesiones y nuevo login. El aprovisionamiento inicial se realiza con herramientas privilegiadas; no hay una ruta pública para crear administradores. Véanse ADR 006 y `auth-setup.md`.
 
+Los dos dominios productivos conservan cuatro retornos exactos de Auth y el Site URL de Hostinger. La función v3 requiere JWT y acepta únicamente ambos sitios publicados; localhost y 127.0.0.1 pertenecen al backend de desarrollo. No hay comodines de vistas previas. Las sesiones se mantienen por origen, por lo que acceder desde Vercel requiere iniciar sesión allí.
+
 ## Evolución prevista
 
+Para las operaciones de backup, el propietario ha elegido el VPS existente de Hostinger/Dokploy en lugar de instalar Docker en el Mac. El propietario instaló el acceso SSH temporal y se verificó el host. El operador separado de la aplicación cifra por streaming el archivo PostgreSQL y los objetos privados con age, fuera de rutas públicas; el VPS recibe solo la clave pública. Una transacción exportada mantiene la consistencia del dump e inventario, y se comprueban cambios concurrentes de Storage. La prueba de restauración usa un contenedor sin red, sin puertos y con datos en tmpfs; la clave privada se queda en el Mac. El servicio real y la recuperación final pasaron (47 tablas, 6 objetos y 24 políticas) y el temporizador diario está activo a las 03:15 de Madrid con dispersión y reintentos limitados. La retención y las alertas al administrador se activaron después de esa primera comprobación; la revisión semanal y la copia externa con clave separada corresponden al propietario. No se trasladan los proyectos Supabase. Véanse `backups.md`, `environments.md` y ADR 011.
+
 SMTP está configurado y el administrador ha comprobado la recuperación por correo y el acceso posterior. El frontend actualizado se publicó el 20 de octubre de 2026 en el despliegue existente de Dokploy, tras aplicar la migración de prefijo fijo. Se verificaron HTTPS, la pantalla **Usuarios** sin configuración de empresa con una sesión real de administrador, la vista móvil a 390 × 844 sin desbordamiento y el rechazo de datos anónimos. Los 13 partes conservaron sus referencias y el siguiente contador quedó en 1019. Las 93 pruebas automatizadas cubren el acceso, los contratos del repositorio, SQL de numeración y los principales flujos React; además pasó la suite completa de autorización en Supabase remoto con rollback. Los siguientes pasos previstos son comprobar la invitación de un nuevo destinatario real, envío real de copias de partes, PDF y pruebas de navegador con integraciones locales. Las cuentas demo permanecen desactivadas. Los avisos pendientes de dependencias se mantienen en `security-auth-2026-10-15.md`.
+
+La operación del backup incorpora retención con recibos y hashes, avisos privados mediante Resend y control horario de antigüedad. La recuperación ampliada añade los servicios de aplicación a una red Docker interna y SMTP capturado, con acceso por SSH desde loopback. No se conectan con los servicios vivos de producción. Véanse ADR 012 y `backups.md`.

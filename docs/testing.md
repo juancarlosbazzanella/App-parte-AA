@@ -1,5 +1,17 @@
 # Pruebas de ClimaGest
 
+## Aislamiento de entornos
+
+`tests/environment-policy.test.ts` comprueba que desarrollo y previews rechazan producción, Vercel Production rechaza desarrollo, se excluyen claves de servidor, los comandos seleccionan referencias explícitas y el importador solo prepara una copia nueva para desarrollo. Comprueba también credenciales QA independientes, conservación de triggers y ausencia de mutación del snapshot. No usa credenciales ni red.
+
+La suite SQL `tests/authorization.sql` pasó de nuevo el 21 de octubre contra `climagest-dev` mediante el CLI autenticado y revirtió todos sus fixtures. Añade casos del lector técnico: SELECT permitido, escrituras denegadas, lista privada inaccesible y sesión revocada sin acceso. Docker/Podman siguen ausentes en el Mac. La recuperación final `20261021T122122Z` pasó en un contenedor desechable del VPS: **47 tablas, 6 objetos y 24 políticas** coincidieron y pasó la suite SQL ampliada. No se reseteó ninguna base existente. Las **11 migraciones** coinciden en ambos proyectos. Véanse [entornos](environments.md) y [backups](backups.md).
+
+`python3 -m unittest discover -s tests -p 'test_backup*.py' -v` pasa 20 pruebas del operador, incluidas siete de retención y avisos: archivos truncados o modificados, rutas fuera del backup e imagen inesperada fallan antes de SSH/Docker; se rechazan credenciales legibles por terceros y los GET de objetos usan un nonce único sin contraseña en la URL. No necesita red, credenciales ni Docker. La comprobación HTTP real confirmó sesión técnica cerrada, acceso nuevo denegado y acceso anónimo denegado. Una URL entregada previamente puede conservar una respuesta en CDN; las descargas del operador evitan reutilizarla y comprueban tamaño, ETag y SHA-256. No se promete revocar bytes ya entregados.
+
+La comprobación de integración adicional pasó contra desarrollo real: login de tres roles, tokens de 900 segundos, rechazo anónimo, RPC de creación/cierre, evento Realtime y Storage privado con PNG sintético, incluyendo rechazo de nuevas subidas después del cierre. Se verificaron las invitaciones bloqueadas con 503 y el origen productivo rechazado con 403. Los partes y archivos temporales se eliminaron; el contador de pruebas conserva los números consumidos. La suite aislada alcanza 100 pruebas en nueve archivos.
+
+El navegador confirmó administrador y técnico con sus datos ficticios; el técnico abrió un parte en vista compacta de 725 px, sin desbordamiento (contenido de 725 px). El acceso de oficina se verificó por API. También pasó la compilación nativa de Next.js, además de vinext, y el análisis de tipos posterior. No se da por realizada una prueba de tacto o teléfono físico.
+
 La suite prioriza pérdidas de datos, acceso, cierres y permisos visibles. Se ejecuta con Node 22.13 o posterior y el pnpm fijado por el proyecto.
 
 ## Ejecución habitual
@@ -55,3 +67,9 @@ La numeración se prueba con SQL real en PGlite sobre un esquema mínimo, sin to
 Completar `tests/manual-smoke.md` cuando el cambio afecte esos límites. Mantener los tres roles y las dos vías de cierre en las regresiones. Una corrección debe incluir una prueba que falle antes y pase después. Evitar nuevas pruebas que solo repitan detalles internos o estilos.
 
 Antes de entregar: `pnpm docs:check`, `pnpm test`, `pnpm lint`, `pnpm exec tsc --noEmit --pretty false --incremental false`, `pnpm build` y `pnpm security:audit`. La auditoría mantiene un aviso alto previo sin parche en braces, documentado en `security-auth-2026-10-15.md`; no se suprime ni se considera aprobada.
+
+La retención se prueba con 500 copias ficticias y una restauración antigua: se conservan las ventanas y la copia verificada. Corrupción, ausencia de prueba o proyecto distinto bloquean cualquier borrado; directorios ajenos y enlaces no se eliminan. Un envío fallido no se registra como entregado y los repetidos no llaman a red. Los simulacros de servicios de `verify_restore.py --full-stack` son operaciones separadas y temporales; SMTP se captura dentro de la red. El mensaje operativo de activación del canal al administrador se comprobó por separado con Resend.
+
+Los bundles de recuperación y evidencias privadas de `outputs/` quedan fuera de ESLint y TypeScript, igual que de Git; el código mantenido sigue comprobándose. Se probó aparte, en PostgreSQL desechable, la restauración de valores por defecto de solo lectura dentro de una transacción explícita de escritura. El enlace OnFailure de systemd se probó con unidades temporales y notificación de prueba deduplicada, sin interrumpir el backup real.
+
+El 21 de octubre pasó también el simulacro de servicios recuperados descrito en `backups.md`, con Auth, REST, Storage, Edge, SMTP capturado y Realtime reales en una red desechable. El navegador verificó administrador, medios históricos, técnico móvil y cierre persistente. Esta prueba operativa requiere una copia cifrada, SSH temporal e imágenes fijadas; no forma parte de Vitest ni envía correos a destinatarios externos.

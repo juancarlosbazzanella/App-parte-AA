@@ -1,9 +1,15 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { readExecutionProfile } from "./execution-profile.mjs";
+import { validateFrontendEnvironment } from "./environment-policy.mjs";
+import { loadEnv } from "vite";
 
 const [command, ...args] = process.argv.slice(2);
 if (!["dev", "build"].includes(command)) throw new Error("Expected dev or build.");
+// Use the same Vite resolution as vinext and pass the checked values to the CLI.
+const frontendEnv = loadEnv(command === "dev" ? "development" : "production", process.cwd(), "NEXT_PUBLIC_");
+validateFrontendEnvironment({ ...process.env, ...frontendEnv }, { development: command === "dev" });
+Object.assign(process.env, frontendEnv);
 const managedLinux = readExecutionProfile() === "managed-linux";
 
 if (managedLinux && command === "build") {
