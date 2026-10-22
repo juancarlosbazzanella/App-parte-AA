@@ -1,6 +1,6 @@
 # Backups cifrados y recuperación
 
-Estado: 21 de octubre de 2026. Operador: VPS existente de Hostinger; producción sigue alojada en Supabase. Decisión: [ADR 011](decisions/011-encrypted-vps-backups.md).
+Estado: 22 de octubre de 2026. Operador: VPS existente de Hostinger; producción sigue alojada en Supabase. Decisión: [ADR 011](decisions/011-encrypted-vps-backups.md).
 
 ## Accesos mínimos
 
@@ -21,7 +21,7 @@ Las claves S3 nativas conceden acceso completo a Storage. Se eligió una cuenta 
 - `/opt/climagest-backup/`: código, age y destinatario público. `/etc/climagest-backup/config.json`: configuración `0600`, accesible solo por root. El proceso está separado de los contenedores existentes de la aplicación.
 - `/var/backups/climagest/`: copias cifradas fuera de rutas web. Se descargaron también al Mac bajo `outputs/supabase-environments/backups/`, ignorado por Git.
 
-La clave privada de recuperación está en `outputs/supabase-environments/hostinger-private/backup-recovery.agekey`, con permisos `0600`. La entrega lista para copiar es `outputs/supabase-environments/climagest-backup-verificado-2026-10-21.tar`; incluye únicamente la copia final, la configuración cifrada del operador, informe, instrucciones y SHA-256. Excluye la clave privada. El propietario debe custodiar otra copia fuera del Mac, separada de los backups, y comprobar que puede leerla. El VPS recibe solo el destinatario público. Sin esa clave las copias no pueden descifrarse. El alta SSH temporal la ejecutó el propietario; se verifica la huella del host con `StrictHostKeyChecking=yes` y se retiró exclusivamente la clave de esta operación al terminar, conservando las demás. Una conexión nueva fue rechazada; la identidad SSH local y el comando de alta se eliminaron. Para intervenciones futuras el propietario deberá autorizar otro acceso.
+La clave privada de recuperación está en `outputs/supabase-environments/hostinger-private/backup-recovery.agekey`, con permisos `0600`. La entrega del 21 de octubre se preparó como `outputs/supabase-environments/climagest-backup-verificado-2026-10-21.tar`; incluye únicamente la copia final, la configuración cifrada del operador, informe, instrucciones y SHA-256. Excluye la clave privada. El propietario debe custodiar otra copia fuera del Mac, separada de los backups, y comprobar que puede leerla. El VPS recibe solo el destinatario público. Sin esa clave las copias no pueden descifrarse. El alta SSH temporal la ejecutó el propietario; se verifica la huella del host con `StrictHostKeyChecking=yes` y se retiró exclusivamente la clave de esta operación al terminar, conservando las demás. Una conexión nueva fue rechazada; la identidad SSH local y el comando de alta se eliminaron. Para intervenciones futuras el propietario deberá autorizar otro acceso.
 
 ## Consistencia e integridad
 
@@ -77,3 +77,7 @@ El simulacro completo sobre **`20261021T154935Z` pasó** el 21 de octubre: 47 ta
 La entrega final usa **`20261021T174128Z`**, descargada y verificada de nuevo con 47 tablas, seis objetos, 24 políticas y la suite de autorización. Se comprobaron los scripts de recuperación y operador dentro de su archivo de configuración cifrado. `restore-final-report.json` registra esta copia; el informe completo de servicios identifica su copia anterior por separado. Ambos informes se conservan también junto a sus respectivos backups del VPS. El paquete TAR de entrega se regeneró con esta copia y la configuración activa del operador, sin la clave privada.
 
 El cierre final volvió a retirar exclusivamente la clave SSH temporal el 21 de octubre a las 19:47 de Madrid, conservando la otra clave autorizada. La conexión nueva fue rechazada; se eliminaron las identidades temporales locales y el comando y se cerró la consola web. La clave privada age de recuperación permanece custodiada en su archivo privado.
+
+El **22 de octubre el propietario confirmó** que la copia externa cifrada y la clave de recuperación ya están guardadas por separado. Esta confirmación cierra la entrega inicial de custodia; no convierte la copia externa en una réplica diaria automática. Mantener la revisión semanal y actualizar la copia externa después de cambios relevantes o nuevas copias que deban protegerse. El TAR original ya no está en su ruta local de entrega; las carpetas cifradas y los informes se conservan bajo `outputs/`, ignorados por Git.
+
+La primera ejecución automática del **22 de octubre** se comprobó desde la consola autenticada de Hostinger: copia `20261022T011935Z`, inicio a las **03:19 de Madrid** y final correcto a las **03:21**. El validador de retención confirmó los hashes de seis copias completas; backup y comprobación horaria muestran `success` y ambos temporizadores están activos. Se realizó solo lectura, sin crear otra clave SSH, y se cerró la consola. Esta comprobación acredita creación e integridad de cifrados; no es otra restauración SQL ni una actualización automática de la copia externa del propietario.

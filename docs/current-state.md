@@ -1,6 +1,6 @@
 # Estado actual
 
-Última actualización: 21 de octubre de 2026.
+Última actualización: 22 de octubre de 2026.
 
 ## Implementado
 
@@ -18,7 +18,7 @@
 - Numeración atómica, control de edición concurrente y auditoría de correcciones posteriores al cierre.
 - Migraciones reproducibles y tipos TypeScript generados desde la base remota.
 - Supabase separado: producción conserva `App de partes` y desarrollo usa `climagest-dev`, en MarboxAI/Frankfurt, con copia saneada, cuentas independientes y correo bloqueado. `.env.local` y las protecciones de arranque evitan usar producción en desarrollo; migraciones con destino explícito. Véanse `environments.md` y ADR 010.
-- Backups diarios cifrados de base y archivos en Hostinger, con retención, avisos al administrador y recuperación de servicios comprobada. La segunda copia externa y la custodia separada de la clave corresponden al propietario; véase `backups.md`.
+- Backups diarios cifrados de base y archivos en Hostinger, con retención, avisos al administrador y recuperación de servicios comprobada. El propietario confirmó el 22 de octubre la copia externa y la custodia separada de la clave; véase `backups.md`.
 - Diseño responsive para móvil, tableta y ordenador.
 - Frontend actualizado publicado el 20 de octubre de 2026 en `https://partes.juancarlosbazzanella.es` mediante el servicio existente de Dokploy.
 - Despliegue de producción adicional en `https://app-parte-aa.vercel.app`, conectado a GitHub y actualizado automáticamente desde `main`, con compilación nativa de Next.js y el mismo Supabase. Véanse `deployment.md` y ADR 009.
@@ -32,6 +32,13 @@
 La entrega y activación de una invitación a un nuevo destinatario real todavía no se han probado con SMTP. Las copias de partes por correo siguen simuladas. No hay PDF, facturación, contabilidad, nóminas, almacén, rutas ni funcionamiento sin conexión. Las cuentas demo están desactivadas. La suite React usa jsdom y no sustituye pruebas de navegador, diseño responsive o integraciones reales; la pantalla administrativa completa y la Edge Function no tienen una suite unitaria sin credenciales, aunque el simulacro aislado sí ejecutó la función y comprobó el frontend. La ejecución local de la suite SQL requiere Docker/Podman, ausentes en este equipo; pasó en desarrollo remoto y en la recuperación aislada del VPS con rollback el 21 de octubre. La auditoría de dependencias mantiene un aviso alto sin parche publicado en braces, usado por herramientas de desarrollo; véase `security-auth-2026-10-15.md`. La protección contra contraseñas filtradas requiere Supabase Pro y no se ha contratado. El panel de administración de Dokploy sigue usando HTTP. Las operaciones Git de escritura requieren autorización expresa; el commit `f820af9` se entregó en `main` con permiso del usuario, que también ha autorizado subir el registro del despliegue y la alineación posterior del nombre de migración.
 
 ## Registro de cambios
+
+### 2026-10-22 — Custodia externa confirmada y auditoría revalidada
+
+- El propietario confirmó que ha guardado la copia externa cifrada y la clave de recuperación por separado. Se registra su confirmación, sin copiar la clave a otro servicio ni solicitar su contenido. La revisión semanal y la actualización de esa copia siguen siendo responsabilidades operativas.
+- La consola autenticada de Hostinger confirmó la primera copia automática, `20261022T011935Z`, iniciada a las 03:19 de Madrid y completada a las 03:21. Los hashes de las seis copias completas pasan; backup y comprobación de salud muestran `success`, y ambos temporizadores están activos. La consulta fue de solo lectura, sin añadir claves SSH, y la consola se cerró después. No se repitió una restauración SQL de esta nueva copia: la recuperación completa verificada sigue identificada en los informes del día 21.
+- Pasaron documentación, las 100 pruebas de aplicación y 20 pruebas Python, lint, tipos limpios y compilación de producción.
+- La auditoría completa mantiene ocho avisos: dos bajos, cinco moderados y el alto de braces 3.0.3 en herramientas de desarrollo. La fuente oficial sigue sin versión corregida. La auditoría de dependencias de producción, con umbral alto, termina correctamente: cero altos/críticos, dos moderados y uno bajo. La auditoría completa sigue fallando; no se suprimen avisos ni se modifican dependencias o controles.
 
 ### 2026-10-21 — Entrega verificada en main y producción
 
